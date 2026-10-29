@@ -1,152 +1,199 @@
-# MarketIt — Plan
+# MarketIt — Final Plan
 
-An automated, AI-driven marketing system that promotes your products with no ongoing cost and close to no daily effort from you.
+An automated, AI-driven system that markets anything you give it (products, services, apps, Lego Ideas projects, events, anything else) on social media. It costs nothing to run and needs almost no work from you.
 
-## 1. Goal
+## 1. How you use it
 
-You describe each product once. MarketIt then, on a schedule:
+You add an item in one of two ways.
 
-1. Writes marketing content for it (posts, captions, product pages, emails).
-2. Makes simple promo images.
-3. Publishes to free channels.
-4. Measures what worked and leans into it the next time.
+**A. Link mode (main way)**
+- Paste a link to anything: a product page, a service, a Lego Ideas project, an app, a Kickstarter, a YouTube video, etc.
+- Optionally add **notes** in plain English. The AI follows them as instructions, and they can say anything, for example:
+  - "Check this Lego Ideas project every day and make a special post when we hit 1k supporters, and again at 5k and 10k."
+  - "Aim at adult Lego fans, not kids."
+  - "Don't mention the price."
+  - "Stop promoting after December 31."
+  - "Push hard this week, it's launch week."
+- Pick an image mode:
+  - `link`: use the images found at the link.
+  - `ai`: AI-generated images.
+  - `auto`: AI decides; the default.
 
-You only step in to add products, and optionally to approve posts.
+**B. Manual mode**
+- Fill in the details yourself: name, description, images, audience. The same notes and image options apply.
 
-## 2. Guiding principles
+**Where you add items:** open a GitHub Issue using a ready-made form (link, notes, image mode). This works from your phone. MarketIt picks it up automatically and replies on the issue with what it understood. Manual mode can also be a YAML file in `items/`.
 
-- **$0 to run.** Use only free tiers, free APIs and free hosting. Every paid service must be optional and swappable.
-- **AI does the work, you have the final say.** It starts in "draft + approve" mode and moves to full autopilot once you trust the output.
-- **Play by platform rules.** No spam, no fake accounts, no fake reviews, and posting limits stay within each platform's terms. Getting banned costs more than any gain.
-- **Pluggable.** Each AI model, channel and image tool sits behind a small interface, so swapping one is a single file change.
+You can add **as many items as you like**. MarketIt rotates between them.
 
-## 3. Architecture
+## 2. What the AI does on its own
 
+For each new item:
+
+1. **Reads the link.** It fetches the page and pulls out the title, text, images and key numbers. A headless browser handles pages that load content with JavaScript, like Lego Ideas.
+2. **Identifies what it is.** For example: physical product, service, digital product, app, crowdfunding or Lego Ideas project, event, content, or other.
+3. **Builds a profile.** It writes down the key facts, benefits, target audience and tone. All facts come only from the page and your notes, never invented.
+4. **Chooses where and how often to market it.** It picks from the channels you've connected, based on what the item is and who it's for.
+5. **Turns your notes into rules.** Content instructions shape every post. Recurring tasks become **watchers** (section 4).
+
+Every run (daily, via GitHub Actions):
+
+- Generates posts in several styles (problem/solution, behind-the-scenes, how-to, humor, urgency, milestone/celebration), shaped for each platform's length, hashtags and tone.
+- Makes or selects images in the item's image mode and crops them for each platform.
+- Publishes them.
+- Collects likes, reposts and clicks, scores which styles work per channel and item type, and favors the winners next time while keeping about 20% exploration.
+
+## 3. Approvals: full auto after the first 5
+
+- The **first 5 posts** wait for your approval. Each appears as a GitHub Issue comment with the text and image; you reply `approve`, `reject`, or `edit: <new text>`.
+- After 5 approvals, MarketIt runs **fully automatically**.
+- `config.yaml` can change the number or turn approvals back on at any time.
+- **Watcher posts are always automatic**, because milestones are time-sensitive.
+
+## 4. Watchers (recurring tasks from your notes)
+
+The AI converts notes like the Lego example into a structured task:
+
+```yaml
+watch:
+  url: https://ideas.lego.com/projects/...
+  every: daily
+  metric: supporters
+  triggers:
+    - when: ">= 1000"   # fires once
+      action: celebration post on all channels
+    - when: ">= 5000"
+      action: celebration post on all channels
+    - when: "+100 in a day"
+      action: momentum post
 ```
-            ┌──────────────┐
-products/   │  Catalog     │  one YAML file per product (name, price, link,
-  *.yaml ──►│  loader      │  photos, audience, key benefits, tone)
-            └──────┬───────┘
-                   ▼
-            ┌──────────────┐     LLM provider (free tier / local)
-            │  Content     │◄──  - Gemini / Groq free tiers, or
-            │  generator   │     - Ollama running locally (fully free)
-            └──────┬───────┘     - Claude API (paid, optional, best quality)
-                   ▼
-            ┌──────────────┐
-            │  Image maker │  Pillow templates: product photo + headline
-            └──────┬───────┘  + price badge → sized for each platform
-                   ▼
-            ┌──────────────┐
-            │  Queue       │  drafts saved as JSON; approve via GitHub
-            │  (+ approve) │  issue/PR or set AUTO_APPROVE=true
-            └──────┬───────┘
-                   ▼
-            ┌──────────────┐  Bluesky · Mastodon · Telegram · Discord
-            │  Publishers  │  · Pinterest · email newsletter · website
-            └──────┬───────┘
-                   ▼
-            ┌──────────────┐  pull likes/clicks/reposts → score each
-            │  Analytics   │  post's "angle" → feed the winners back
-            │  + learning  │  into the generator prompt
-            └──────────────┘
 
-Scheduler: GitHub Actions cron (free) runs the whole pipeline daily.
-Storage:   the git repo itself (catalog, queue, history, metrics as JSON).
-```
+- On each run, MarketIt reads the current value from the page and compares it with the last stored value. Each trigger fires **exactly once**.
+- Watchers work on any page with a number: supporters, backers, downloads, stars, days left, and so on.
+- The value history is stored, so posts can say things like "we gained 300 supporters this week!"
 
-## 4. Free channels, by priority
+## 5. Channels (social media only, no websites)
 
-| Channel | Why | Automation |
+The AI posts only to channels you've connected, and decides which items go where.
+
+| Channel | Good for | What you need (all free) | Fully automatic? |
+|---|---|---|---|
+| **Bluesky** | Reaching new people (hashtags, custom feeds) | Account + app password | Yes |
+| **Mastodon** | Niche communities (hobby, tech, Lego/AFOL instances) | Account + access token | Yes |
+| **Pinterest** | Products, crafts, Lego builds; long-lasting traffic | Business account + developer app approval | Yes, once approved |
+| **Threads / Instagram / Facebook** | Big reach | Business/creator account + Meta developer app | Yes, after setup |
+| **Telegram channel** | Followers you already have | Channel + bot from @BotFather | Yes |
+| **Discord** | A community/server you already have | Server + webhook URL | Yes |
+| **Reddit** | Big niche communities | — | **No.** Subreddit rules ban automated self-promotion and accounts get banned. The AI writes drafts you can post by hand. |
+| **X (Twitter)** | — | Free API tier is very restricted | Optional, check limits first |
+
+**Do you need Bluesky, Telegram and Discord accounts? No, you don't need all three.** You need **at least one channel**, and each channel you want needs its own free account. Note:
+
+- **Telegram and Discord only reach people who already joined your channel or server.** They're useful once you have fans, but they won't find new people for you.
+- **To reach new people, start with Bluesky, then add Pinterest and Mastodon.** These have free APIs and real discovery.
+- Since you'll market many different things, use **one creator/brand account per platform** that posts all of them. The AI keeps the mix varied so it doesn't look like spam.
+
+## 6. AI and image providers (free)
+
+| Job | Default (free) | Alternatives |
 |---|---|---|
-| **Own website / product pages** (GitHub Pages) | Free hosting; SEO brings traffic for months | Full — AI writes the pages, Actions deploys them |
-| **Bluesky** | Open, free API; easy to automate | Full |
-| **Mastodon** | Open, free API | Full |
-| **Telegram channel** | Free bot API; direct reach to followers | Full |
-| **Discord** (your server) | Free webhooks | Full |
-| **Pinterest** | Strong for products, links drive traffic | API needs app approval |
-| **Email newsletter** (Buttondown / Brevo free tier) | Highest-converting channel you own | Full, within free-tier send limits |
-| **Reddit** | Big reach, but strict self-promo rules | **Drafts only** — you post by hand |
-| **Instagram / Facebook / TikTok** | Big reach | Business account + app review needed; later phase |
-| **X (Twitter)** | Free API tier is very limited | Optional; check current limits first |
+| Reading pages, writing posts, following notes | Gemini API free tier | Groq free tier, local Ollama, Claude API (paid, optional) |
+| AI images | Free-tier image model (e.g. Gemini or Cloudflare Workers AI) | Local Stable Diffusion; Pillow template cards as the always-free fallback |
+| Image mode `link` | Images downloaded from the page, then resized/cropped | — |
 
-The free-tier limits for each service change over time. Check them when you build each publisher.
+Each provider sits behind a small interface, so switching is a config change. Free-tier limits change over time and are checked when each provider is built. In `auto` mode, AI images are never made to look like the real product, which would be misleading. They are used for mood/promo graphics, and real photos from the link are used to show the item itself.
 
-## 5. What the AI generates
+## 7. Architecture
 
-For each product, on each run:
+```
+GitHub Issue (link + notes + image mode)  or  items/*.yaml
+                    │
+                    ▼
+   ┌─────────────────────────────┐
+   │ Intake: fetch page → identify│──► item profile + rules + watchers
+   │ type → extract facts/images  │    (saved to data/items/)
+   └──────────────┬──────────────┘
+                  ▼   (daily GitHub Actions cron)
+   ┌─────────────────────────────┐
+   │ Watchers: check pages,       │──► milestone posts (always auto)
+   │ fire triggers once           │
+   ├─────────────────────────────┤
+   │ Planner: pick items + channels│  rotation across all items,
+   │ for today within post caps   │  per-channel daily limits
+   ├─────────────────────────────┤
+   │ Generator: text per platform │◄── learned style scores
+   │ + images (link / ai / auto)  │
+   ├─────────────────────────────┤
+   │ Approval gate (first 5 only) │
+   ├─────────────────────────────┤
+   │ Publishers: Bluesky, Mastodon│
+   │ Pinterest, Meta, Telegram,   │
+   │ Discord                      │
+   ├─────────────────────────────┤
+   │ Analytics: fetch stats,      │──► style scores
+   │ score styles                 │
+   └─────────────────────────────┘
+```
 
-- **Several variants** of each post, each with a different angle (problem/solution, social proof, urgency, humor, behind-the-scenes, how-to).
-- Platform-shaped copy: length limits, hashtags and tone per channel.
-- An SEO product page (title, meta description, FAQ) for the website.
-- A weekly newsletter roundup.
-- Reddit/forum drafts that lead with value rather than an ad (approval only).
+**Storage:** the repo itself holds items, posts, watcher values and stats as JSON, so there's no database to pay for.
+**Secrets:** API keys are stored as GitHub Actions secrets and never committed.
 
-**Learning loop:** each post is tagged with its angle. Analytics scores the angles per channel, and the next prompt says, for example, "humor and how-to performed best on Bluesky last 2 weeks; favor those, keep 20% exploration."
-
-## 6. Repo layout
+## 8. Repo layout
 
 ```
 MarketIt/
-├── products/              # your catalog — the only thing you edit
-│   └── example.yaml
+├── items/                     # manual-mode items (optional)
 ├── marketit/
-│   ├── catalog.py         # load + validate products
-│   ├── llm/               # provider interface + gemini/groq/ollama/claude
-│   ├── generate.py        # prompts, variants, angle tagging
-│   ├── images.py          # Pillow promo-card templates
-│   ├── queue.py           # drafts, approval state
-│   ├── publishers/        # bluesky.py, mastodon.py, telegram.py, ...
-│   ├── analytics.py       # fetch metrics, score angles
-│   └── site/              # static product pages generator
-├── data/                  # queue/, history/, metrics/ (JSON, committed)
-├── .github/workflows/
-│   ├── daily.yml          # generate → (approve) → publish
-│   └── metrics.yml        # collect stats, update scores
-└── config.yaml            # channels on/off, posting frequency, auto-approve
+│   ├── intake/                # fetch.py (incl. headless browser), identify.py, notes.py
+│   ├── llm/                   # gemini.py, groq.py, ollama.py, claude.py
+│   ├── images/                # from_link.py, ai_gen.py, templates.py
+│   ├── watchers.py            # metric checks + triggers
+│   ├── planner.py             # what to post today, where
+│   ├── generate.py            # platform-shaped posts, style tagging
+│   ├── approvals.py           # first-5 gate via GitHub Issues
+│   ├── publishers/            # bluesky.py, mastodon.py, pinterest.py, meta.py, telegram.py, discord.py
+│   └── analytics.py
+├── data/                      # items/, posts/, watchers/, stats/
+├── .github/
+│   ├── ISSUE_TEMPLATE/add-item.yml
+│   └── workflows/
+│       ├── intake.yml         # runs when an item issue is opened
+│       ├── daily.yml          # watchers → plan → generate → publish
+│       └── approvals.yml      # runs on issue comments
+├── config.yaml                # connected channels, caps, approval count
+└── PLAN.md
 ```
 
-API keys are stored as **GitHub Actions secrets** and never committed.
+## 9. Build phases
 
-## 7. Build phases
+**Phase 1 — Core**
+- Issue form and intake: fetch, identify, extract facts and images
+- Notes interpreter that turns notes into rules and watchers
+- Gemini provider
+- Generator, with images from the link plus template cards
+- First-5 approval gate
+- Bluesky publisher
+- Daily workflow, plus a `--dry-run` CLI
 
-**Phase 1 — MVP**
-- Product YAML schema and loader
-- LLM provider interface plus one free provider
-- Post generator with variants and angles
-- Publishers for Bluesky, Telegram and Discord
-- Approval queue, plus a `--dry-run` CLI mode
-- Daily GitHub Actions workflow
-
-**Phase 2 — Owned channels**
-- Generated static site with SEO product pages on GitHub Pages
-- Promo image generator
-- Email newsletter integration
-- Mastodon publisher
+**Phase 2 — Watchers and more channels**
+- Watchers with milestone triggers (Lego Ideas tested first)
+- Mastodon, Telegram and Discord publishers
+- AI image generation
 
 **Phase 3 — Getting smarter**
-- Metrics collection per channel
-- Angle scoring and a feedback loop into the prompts
+- Stats collection
+- Style scoring and a feedback loop into the generator
 - Best-time-to-post learning
-- UTM links so website clicks can be traced to the post that drove them
+- Multi-item rotation tuning
 
-**Phase 4 — Reach**
-- Pinterest, then Instagram/Facebook via the Meta Graph API
-- Reddit/community draft suggestions
-- Optional local web dashboard to approve posts and view stats
+**Phase 4 — Big platforms**
+- Pinterest, Threads, Instagram and Facebook, once developer app approvals come through
+- Reddit draft suggestions
 
-## 8. Risks and how they're handled
+## 10. Guardrails
 
-| Risk | Mitigation |
-|---|---|
-| AI writes something wrong or off-brand | Approval mode by default; facts come only from the product YAML; banned-claims list |
-| Looks spammy / account flagged | Posting caps per channel, varied content, value-first posts, real account only |
-| Free tier changes or disappears | Pluggable providers; Ollama as a fully local fallback |
-| Leaked API keys | GitHub secrets only; `.gitignore` for local `.env` |
-
-## 9. Open questions
-
-1. **What are you marketing?** Physical products, digital products, an app, or a service? This decides which channels go first.
-2. **Where does the audience already hang out?** Pick the first 2–3 channels from that.
-3. **Where should the "buy" link go?** Etsy, Shopify, Gumroad, eBay, your own site?
-4. **Approval or autopilot from day one?**
+- Facts come only from the link and your notes; the AI never invents claims, reviews or numbers.
+- Posting caps per channel per day; content is varied; there are no auto-DMs, auto-follows or mass replies.
+- Notes can ask for anything, but the AI won't follow notes that break platform rules (e.g. spamming, fake accounts). It reports that on the item's issue instead.
+- Each watcher trigger fires once, so a page glitch can't cause duplicate milestone posts.
+- If anything fails (a dead link, an expired key, a rate limit), MarketIt comments on the item's issue, so you'll know.
