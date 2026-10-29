@@ -1,0 +1,7 @@
+requests>=2.31
+PyYAML>=6.0
+beautifulsoup4>=4.12
+Pillow>=10.1
+# Optional extras
+# playwright>=1.44   # renders JavaScript-heavy pages such as Lego Ideas (installed by the workflows)
+# anthropic>=0.40    # only if you use the paid Claude provider

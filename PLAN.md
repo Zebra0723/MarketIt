@@ -142,25 +142,29 @@ GitHub Issue (link + notes + image mode)  or  items/*.yaml
 
 ```
 MarketIt/
-├── items/                     # manual-mode items (optional)
+├── items/                     # manual-mode items (optional YAML files)
 ├── marketit/
-│   ├── intake/                # fetch.py (incl. headless browser), identify.py, notes.py
-│   ├── llm/                   # gemini.py, groq.py, ollama.py, claude.py
-│   ├── images/                # from_link.py, ai_gen.py, templates.py
-│   ├── watchers.py            # metric checks + triggers
-│   ├── planner.py             # what to post today, where
+│   ├── intake/                # fetch.py (incl. headless browser), issue_form.py, profile.py
+│   ├── llm/                   # gemini.py, groq.py, ollama.py, claude.py, fake.py (tests)
+│   ├── images/                # photos from the link, ai_gen.py, cards.py (templates)
+│   ├── publishers/            # bluesky, mastodon, pinterest, threads, instagram, facebook, telegram, discord, x
+│   ├── prompts.py             # every prompt sent to the AI
+│   ├── watchers.py            # metric checks + milestone triggers
+│   ├── planner.py             # what to post now, where
 │   ├── generate.py            # platform-shaped posts, style tagging
-│   ├── approvals.py           # first-5 gate via GitHub Issues
-│   ├── publishers/            # bluesky.py, mastodon.py, pinterest.py, meta.py, telegram.py, discord.py
-│   └── analytics.py
-├── data/                      # items/, posts/, watchers/, stats/
+│   ├── learning.py            # style + best-hour scoring
+│   ├── approvals.py           # first-5 gate + issue comment commands
+│   ├── runner.py              # prepare → publish → stats
+│   └── cli.py                 # python -m marketit ...
+├── data/                      # items/, queue/, posts/, media/, state.json (committed by the bot)
+├── tests/
 ├── .github/
 │   ├── ISSUE_TEMPLATE/add-item.yml
 │   └── workflows/
-│       ├── intake.yml         # runs when an item issue is opened
-│       ├── daily.yml          # watchers → plan → generate → publish
-│       └── approvals.yml      # runs on issue comments
-├── config.yaml                # connected channels, caps, approval count
+│       ├── issues.yml         # new/edited/closed item issues + comment commands
+│       ├── run.yml            # every 3h: prepare → push images → publish → stats
+│       └── tests.yml
+├── config.yaml                # channel caps, AI providers, approval count
 └── PLAN.md
 ```
 
