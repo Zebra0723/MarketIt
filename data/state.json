@@ -1,11 +1,22 @@
 {
   "approved_count": 0,
-  "channels": {},
+  "channels": {
+    "bluesky": {
+      "day": "2026-10-30",
+      "count": 0,
+      "next_at": null
+    }
+  },
   "style_scores": {},
   "best_hours": {},
   "last_stats_at": null,
   "approvals_issue": null,
-  "issues_synced_at": "2026-10-30T13:00:47+00:00",
-  "processed_comments": [],
-  "comments_synced_at": "2026-10-30T13:00:47+00:00"
+  "issues_synced_at": "2026-10-30T15:49:31+00:00",
+  "processed_comments": [
+    6526999883
+  ],
+  "comments_synced_at": "2026-10-30T15:49:31+00:00",
+  "failed_issues": {
+    "1": "7060e14d9b21d215"
+  }
 }
