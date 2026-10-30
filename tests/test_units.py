@@ -265,3 +265,26 @@ def test_gemini_switches_model_when_retired(isolated, monkeypatch):
     assert GeminiLLM("gemini-old").complete("x") == "hi"
     assert GeminiLLM("gemini-old").complete("y") == "hi"
     assert len(web.calls_to(f"{base}/gemini-old")) == 1   # remembered, not retried
+
+
+def test_gemini_low_thinking_timeout_retry_and_fallback(isolated, monkeypatch):
+    import requests
+    from .conftest import FakeResponse
+    from marketit.llm.gemini import GeminiLLM, thinking_config
+    assert thinking_config("gemini-3.8-flash") == {"thinkingLevel": "low"}
+    assert thinking_config("gemini-2.5-flash") == {"thinkingBudget": 512}
+    monkeypatch.setenv("GEMINI_API_KEY", "k" * 20)
+    web = isolated
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
+    calls = {"n": 0}
+
+    def flaky(u, kw):
+        calls["n"] += 1
+        assert kw["json"]["generationConfig"]["thinkingConfig"] == {"thinkingLevel": "low"}
+        if calls["n"] == 1:
+            raise requests.Timeout("slow")
+        return {"candidates": [{"content": {"parts": [{"text": "t", "thought": True}, {"text": "ok"}]}}]}
+
+    web.on("POST", url, flaky)
+    assert GeminiLLM("gemini-3.8-flash").complete("x", json_mode=True) == "ok"
+    assert calls["n"] == 2
