@@ -76,7 +76,7 @@ def lego_watchers(link: str, config: dict, extra_milestones: list) -> list[dict]
 def build_item(llm, config: dict, *, link: str, notes: str = "", source: dict | None = None,
                existing: dict | None = None) -> dict:
     if not legoideas.is_project_url(link):
-        raise ValueError("MarketIt only works with LEGO Ideas project links, like https://ideas.lego.com/projects/…")
+        raise ValueError("MarketIt only works with LEGO Ideas project links, like https://ideas.lego.com/product-ideas/…")
     link = legoideas.canonical_url(link)
     page = fetch_page(link)
     stats = project_stats(page)

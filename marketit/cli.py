@@ -38,9 +38,15 @@ def cmd_sync(args, config):
 
 
 def cmd_prepare(args, config):
+    from .llm import LLMError
     from .runner import prepare
 
-    summary = prepare(config, _llm(args, config))
+    try:
+        llm = _llm(args, config)
+    except LLMError as exc:
+        print(f"⏸️  Skipping: {exc}")
+        return
+    summary = prepare(config, llm)
     print(json.dumps(summary, indent=2))
 
 
@@ -163,7 +169,7 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p = sub.add_parser("add", help="add a LEGO Ideas project")
-    p.add_argument("link", help="https://ideas.lego.com/projects/...")
+    p.add_argument("link", help="https://ideas.lego.com/product-ideas/...")
     p.add_argument("--notes", default="")
     p.set_defaults(fn=cmd_add)
 

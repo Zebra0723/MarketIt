@@ -7,7 +7,8 @@ from urllib.parse import urlparse
 
 from .textutil import parse_number
 
-PROJECT_RE = re.compile(r"https?://ideas\.lego\.com/projects/([0-9a-fA-F-]{8,})")
+# Project pages live at /product-ideas/<id> (current) or /projects/<id> (older links).
+PROJECT_RE = re.compile(r"https?://ideas\.lego\.com/(projects|product-ideas)/([0-9a-fA-F-]{8,})")
 
 # Milestones that get a celebration post by default. 10,000 sends a project to LEGO review.
 DEFAULT_MILESTONES = [100, 250, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
@@ -28,18 +29,23 @@ def is_project_url(url: str | None) -> bool:
     return bool(url and PROJECT_RE.match(url.strip()))
 
 
+def find_project_url(text: str | None) -> str | None:
+    m = PROJECT_RE.search(text or "")
+    return m.group(0) if m else None
+
+
 def canonical_url(url: str) -> str:
-    """https://ideas.lego.com/projects/<id>/updates?x=1 -> https://ideas.lego.com/projects/<id>"""
+    """https://ideas.lego.com/product-ideas/<id>/updates?x=1 -> https://ideas.lego.com/product-ideas/<id>"""
     m = PROJECT_RE.match(url.strip())
-    return f"https://ideas.lego.com/projects/{m.group(1)}" if m else url.strip()
+    return f"https://ideas.lego.com/{m.group(1)}/{m.group(2)}" if m else url.strip()
 
 
 def short_url(url: str) -> str:
-    """Readable version for graphics: ideas.lego.com/projects/a6b7e5c1…"""
+    """Readable version for graphics: ideas.lego.com/product-ideas/6726571d…"""
     m = PROJECT_RE.match(url)
     if not m:
         return urlparse(url).netloc + urlparse(url).path
-    return f"ideas.lego.com/projects/{m.group(1)[:8]}…"
+    return f"ideas.lego.com/{m.group(1)}/{m.group(2)[:8]}…"
 
 
 def _find(pattern: str, text: str) -> float | None:

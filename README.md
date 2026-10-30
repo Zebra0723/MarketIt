@@ -36,7 +36,7 @@ Add the secrets for the channels you want; see the [channel table](#channels) be
 ### 4. Add your project
 Go to **Issues → New issue → 🧱 Promote a LEGO Ideas project**:
 
-- **LEGO Ideas link:** e.g. `https://ideas.lego.com/projects/…`
+- **LEGO Ideas link:** e.g. `https://ideas.lego.com/product-ideas/…`
 - **Notes (optional):** anything in plain English. For example: *"Aim at castle fans. Mention the working drawbridge. Also celebrate 1,500 supporters."*
 
 Within a minute or two MarketIt replies on the issue with what it understood:
@@ -145,7 +145,7 @@ You can also add a project as a YAML file in `items/`:
 
 ```yaml
 # items/castle.yaml
-link: https://ideas.lego.com/projects/…
+link: https://ideas.lego.com/product-ideas/…
 notes: Aim at castle fans. Also celebrate 1,500 supporters.
 active: true          # false = paused
 ```
@@ -176,7 +176,7 @@ export GEMINI_API_KEY=...
 Add a project (`--notes` is optional):
 
 ```bash
-python -m marketit add https://ideas.lego.com/projects/... --notes "aim at castle fans"
+python -m marketit add https://ideas.lego.com/product-ideas/... --notes "aim at castle fans"
 ```
 
 See sample posts for every channel without posting anything:
@@ -206,7 +206,7 @@ python -m marketit approve P1A2B3
 Try it without an AI key using `--fake-ai`:
 
 ```bash
-python -m marketit --fake-ai add https://ideas.lego.com/projects/...
+python -m marketit --fake-ai add https://ideas.lego.com/product-ideas/...
 ```
 
 For Ollama (free, runs on your machine), set `OLLAMA_HOST=http://localhost:11434`.

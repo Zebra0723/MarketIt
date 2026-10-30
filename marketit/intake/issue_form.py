@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 
+from .. import legoideas
 from ..textutil import URL_RE
 
 FIELDS = {
@@ -40,6 +41,8 @@ def parse_issue_form(body: str) -> dict:
     if out["link"]:
         m = URL_RE.search(out["link"])
         out["link"] = m.group(0) if m else ""
+    if not legoideas.find_project_url(out["link"]) and legoideas.find_project_url(body):
+        out["link"] = legoideas.find_project_url(body)
     elif not sections:
         # Plain issue (not the form): first URL is the link, everything else is notes.
         m = URL_RE.search(body or "")

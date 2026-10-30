@@ -11,7 +11,9 @@ import logging
 from datetime import timedelta
 
 from .approvals import handle_comment
+from . import legoideas
 from .intake import ITEM_LABEL, intake_from_issue
+from .llm import LLMError
 from .storage import find_item_by_issue, iso, load_state, now, parse_iso, save_item, save_state
 
 log = logging.getLogger(__name__)
@@ -33,7 +35,8 @@ def _since(value: str | None) -> str | None:
 
 
 def sync_issues(config: dict, llm_factory, gh, state: dict) -> int:
-    params = {"labels": ITEM_LABEL, "state": "all", "sort": "updated", "direction": "asc"}
+    # Not filtered by label: GitHub drops a form's label if it doesn't exist in the repo yet.
+    params = {"state": "all", "sort": "updated", "direction": "asc"}
     since = _since(state.get("issues_synced_at"))
     if since:
         params["since"] = since
@@ -41,7 +44,10 @@ def sync_issues(config: dict, llm_factory, gh, state: dict) -> int:
     for issue in gh.paged("issues", params):
         if "pull_request" in issue or not allowed(config, issue.get("author_association")):
             continue
+        labels = {l["name"] if isinstance(l, dict) else l for l in issue.get("labels", [])}
         item = find_item_by_issue(issue["number"])
+        if not item and ITEM_LABEL not in labels and not legoideas.find_project_url(issue.get("body")):
+            continue  # not a MarketIt issue
         if issue["state"] == "closed":
             if item and item["status"] != "ended":
                 item["status"] = "ended"
@@ -58,7 +64,20 @@ def sync_issues(config: dict, llm_factory, gh, state: dict) -> int:
         failed = state.setdefault("failed_issues", {})
         if failed.get(str(issue["number"])) == digest:
             continue  # already reported as failed; waits for the owner to edit the issue
-        new = intake_from_issue(llm_factory(), config, issue, gh)
+        if not item:
+            gh.react(issue["number"])               # 👍 = received
+            if ITEM_LABEL not in labels:
+                gh.add_labels(issue["number"], [ITEM_LABEL])
+        try:
+            llm = llm_factory()
+        except LLMError as exc:
+            if state.setdefault("no_ai_warned", {}).get(str(issue["number"])) != digest:
+                gh.comment(issue["number"], f"⏳ Got it! But I can't start yet: {exc}\n\n"
+                           "Add the secret in **Settings → Secrets and variables → Actions**, and I'll pick this up "
+                           "automatically on the next run (or run **Actions → MarketIt run → Run workflow**).")
+                state["no_ai_warned"][str(issue["number"])] = digest
+            continue  # retried automatically once a key is added
+        new = intake_from_issue(llm, config, issue, gh)
         failed.pop(str(issue["number"]), None)
         if new:
             new["source"]["issue_hash"] = digest

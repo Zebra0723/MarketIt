@@ -62,6 +62,12 @@ class FakeGitHub:
     def repo_is_public(self):
         return False
 
+    def react(self, issue, content="+1"):
+        self.reactions = getattr(self, "reactions", []) + [(issue, content)]
+
+    def add_labels(self, issue, labels):
+        self.labels = getattr(self, "labels", []) + [(issue, labels)]
+
 
 def setup_bluesky(web, monkeypatch):
     monkeypatch.setenv("BLUESKY_HANDLE", "me.bsky.social")
@@ -253,3 +259,35 @@ def test_sync_catches_up_on_issues_and_comments(web, monkeypatch, config, fake_l
     mine["state"] = "closed"
     sync(config, lambda: fake_llm, gh)
     assert all_items()[0]["status"] == "ended"
+
+
+def test_unlabelled_product_ideas_issue_is_picked_up_with_thumbs_up(web, monkeypatch, config, fake_llm):
+    """GitHub drops a form's label if it doesn't exist yet: the issue must still be found by its link."""
+    from marketit.llm import LLMError
+    from marketit.sync import sync
+
+    link = "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5"
+    web.on("GET", link, lego_page("42"))
+    for url, size in PHOTOS.items():
+        web.on("GET", url, FakeResponse(content=jpeg_bytes(size)))
+    gh = SyncGitHub()
+    gh.issues = [{"number": 1, "state": "open", "title": "LEGO Ideas: The Golden Gate Bridge", "labels": [],
+                  "body": f"### LEGO Ideas link\n\n{link}\n\n### Notes\n\nadvertise it to lego communities",
+                  "author_association": "OWNER"},
+                 {"number": 2, "state": "open", "title": "unrelated bug", "labels": [], "body": "hi",
+                  "author_association": "OWNER"}]
+
+    # No AI key yet: acknowledged with 👍 and a helpful comment (once), not silence.
+    def no_key():
+        raise LLMError("No AI provider is configured. Add a free GEMINI_API_KEY")
+    sync(config, no_key, gh)
+    sync(config, no_key, gh)
+    assert gh.reactions[0] == (1, "+1") and (1, ["marketit-item"]) in gh.labels
+    assert sum("GEMINI_API_KEY" in b for _, b in gh.comments) == 1
+    assert all_items() == []
+
+    # Key added: picked up automatically on the next run.
+    sync(config, lambda: fake_llm, gh)
+    [item] = all_items()
+    assert item["profile"]["link"] == link and item["source"]["issue"] == 1
+    assert "Got it" in gh.comments[-1][1]

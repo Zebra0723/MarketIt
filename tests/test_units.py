@@ -172,6 +172,11 @@ def test_project_urls():
     assert not legoideas.is_project_url("https://example.com/projects/a6b7e5c1")
     assert legoideas.canonical_url(PROJECT + "/comments?page=2") == PROJECT
     assert legoideas.short_url(PROJECT) == "ideas.lego.com/projects/a6b7e5c1…"
+    new = "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5"
+    assert legoideas.is_project_url(new)
+    assert legoideas.canonical_url(new + "/updates") == new
+    assert legoideas.short_url(new) == "ideas.lego.com/product-ideas/6726571d…"
+    assert legoideas.find_project_url(f"see {new} thanks") == new
 
 
 def test_parse_stats_from_page_text():

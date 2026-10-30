@@ -42,6 +42,13 @@ class GitHub:
             log.warning("couldn't create issue: %s", exc)
             return None
 
+    def react(self, issue: int, content: str = "+1") -> None:
+        """Add a reaction to an issue (GitHub ignores duplicates)."""
+        try:
+            http.post(f"{API}/repos/{self.repo}/issues/{issue}/reactions", json={"content": content}, headers=self.headers)
+        except Exception as exc:
+            log.info("couldn't react on issue #%s: %s", issue, exc)
+
     def add_labels(self, issue: int, labels: list[str]) -> None:
         try:
             http.post(f"{API}/repos/{self.repo}/issues/{issue}/labels", json={"labels": labels}, headers=self.headers)

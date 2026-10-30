@@ -7,8 +7,8 @@ body:
     id: link
     attributes:
       label: LEGO Ideas link
-      description: The project page, e.g. https://ideas.lego.com/projects/…
-      placeholder: https://ideas.lego.com/projects/
+      description: The project page, e.g. https://ideas.lego.com/product-ideas/…
+      placeholder: https://ideas.lego.com/product-ideas/
     validations:
       required: true
   - type: textarea

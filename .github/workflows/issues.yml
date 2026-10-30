@@ -10,18 +10,43 @@ permissions:
   contents: write
   issues: write
 
-concurrency:
-  group: marketit-state
-  cancel-in-progress: false
-
 jobs:
+  ack:
+    # Instant receipt: react 👍 to a new project issue or a comment on one, before the slower work starts.
+    if: >-
+      github.event.sender.type != 'Bot' &&
+      (github.event_name == 'issue_comment' || github.event.action == 'opened' || github.event.action == 'edited' || github.event.action == 'reopened') &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.issue.author_association) &&
+      (contains(github.event.issue.labels.*.name, 'marketit-item') ||
+       contains(github.event.issue.labels.*.name, 'marketit-approvals') ||
+       contains(github.event.issue.body, 'ideas.lego.com'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: React 👍
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue.number }}
+          COMMENT: ${{ github.event.comment.id }}
+        run: |
+          if [ -n "$COMMENT" ]; then
+            gh api -X POST "repos/$REPO/issues/comments/$COMMENT/reactions" -f content=+1 --silent
+          else
+            gh api -X POST "repos/$REPO/issues/$ISSUE/reactions" -f content=+1 --silent
+          fi
+
   sync:
+    concurrency:
+      group: marketit-state
+      cancel-in-progress: false
     # Every run catches up on ALL unprocessed issues/comments, so nothing is lost even
     # if GitHub cancels a queued run of this workflow.
     if: >-
       github.event.sender.type != 'Bot' &&
       (contains(github.event.issue.labels.*.name, 'marketit-item') ||
-       contains(github.event.issue.labels.*.name, 'marketit-approvals'))
+       contains(github.event.issue.labels.*.name, 'marketit-approvals') ||
+       contains(github.event.issue.body, 'ideas.lego.com'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

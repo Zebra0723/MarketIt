@@ -87,7 +87,7 @@ def summary_markdown(item: dict, config: dict, drafts: list[dict] | None = None)
     return "\n".join(l for l in lines if l is not None)
 
 
-NOT_LEGO = ("⚠️ MarketIt works with **LEGO Ideas project links**, like `https://ideas.lego.com/projects/…`. "
+NOT_LEGO = ("⚠️ MarketIt works with **LEGO Ideas project links**, like `https://ideas.lego.com/product-ideas/…`. "
             "Edit the issue to paste one.")
 
 
