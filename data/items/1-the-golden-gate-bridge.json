@@ -1,0 +1,212 @@
+{
+  "id": "1-the-golden-gate-bridge",
+  "status": "active",
+  "created_at": "2026-10-30T17:16:03+00:00",
+  "last_posted": {},
+  "post_count": 0,
+  "source": {
+    "type": "link",
+    "link": "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5",
+    "issue": 1,
+    "issue_hash": "7060e14d9b21d215"
+  },
+  "notes": "Make sure to advertise it to lego communities",
+  "profile": {
+    "kind": "lego_ideas_project",
+    "title": "The Golden Gate Bridge",
+    "summary": "A detailed LEGO representation of California's iconic Golden Gate Bridge, featuring cars on the road and intricate architectural elements across nearly 4,000 pieces.",
+    "theme": "architecture",
+    "facts": [
+      "Contains almost 4,000 pieces",
+      "Depicts the iconic Golden Gate Bridge landmark in California",
+      "Features microscale cars driving across the roadway",
+      "Creator's very first LEGO Ideas model submission"
+    ],
+    "selling_points": [
+      "A massive, highly detailed centerpiece display model of a world-famous landmark",
+      "Would serve as a natural, expansive addition to the LEGO Architecture style lineup",
+      "Captures intricate architectural engineering and roadway details at a grand scale"
+    ],
+    "audience": "LEGO Architecture fans, AFOLs (Adult Fans of LEGO), bridge enthusiasts, California and San Francisco locals, and travel/landmark lovers",
+    "tone": "enthusiastic, proud, community-oriented, and authentic to a first-time LEGO Ideas builder",
+    "hashtags": [
+      "LEGOIdeas",
+      "LEGO",
+      "AFOL",
+      "LEGOArchitecture",
+      "GoldenGateBridge",
+      "SanFrancisco",
+      "California",
+      "LEGOMOC",
+      "BrickNetwork"
+    ],
+    "link": "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5",
+    "images": [
+      "https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e99583/original:0:0/webp",
+      "https://ideas.lego.com/build/images/blank-aev7vQVR.png"
+    ]
+  },
+  "project": {
+    "supporters": 161,
+    "days_left": 421,
+    "creator": "ZEBRASARECOOL",
+    "source": "AI",
+    "next_goal": 250,
+    "updated_at": "2026-10-30T17:19:23+00:00"
+  },
+  "strategy": {
+    "channels": [
+      "bluesky",
+      "threads",
+      "instagram",
+      "pinterest",
+      "mastodon"
+    ],
+    "posts_per_week": 3,
+    "rules": [
+      "Direct marketing focus, relevant hashtags, and discussions toward LEGO and AFOL communities"
+    ],
+    "end_date": null
+  },
+  "watchers": [
+    {
+      "id": "w1",
+      "url": "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5",
+      "metric": "supporters",
+      "every_hours": 6.0,
+      "triggers": [
+        {
+          "id": "t1",
+          "op": ">=",
+          "value": 100.0,
+          "message": "the first big hurdle on LEGO Ideas, which earns the project more time"
+        },
+        {
+          "id": "t2",
+          "op": ">=",
+          "value": 250.0,
+          "message": "milestone"
+        },
+        {
+          "id": "t3",
+          "op": ">=",
+          "value": 500.0,
+          "message": "milestone"
+        },
+        {
+          "id": "t4",
+          "op": ">=",
+          "value": 1000.0,
+          "message": "a major milestone that earns the project extra time"
+        },
+        {
+          "id": "t5",
+          "op": ">=",
+          "value": 2000.0,
+          "message": "milestone"
+        },
+        {
+          "id": "t6",
+          "op": ">=",
+          "value": 3000.0,
+          "message": "milestone"
+        },
+        {
+          "id": "t7",
+          "op": ">=",
+          "value": 4000.0,
+          "message": "milestone"
+        },
+        {
+          "id": "t8",
+          "op": ">=",
+          "value": 5000.0,
+          "message": "halfway to LEGO review, which earns the project extra time"
+        },
+        {
+          "id": "t9",
+          "op": ">=",
+          "value": 6000.0,
+          "message": "milestone"
+        },
+        {
+          "id": "t10",
+          "op": ">=",
+          "value": 7000.0,
+          "message": "milestone"
+        },
+        {
+          "id": "t11",
+          "op": ">=",
+          "value": 8000.0,
+          "message": "milestone"
+        },
+        {
+          "id": "t12",
+          "op": ">=",
+          "value": 9000.0,
+          "message": "milestone"
+        },
+        {
+          "id": "t13",
+          "op": ">=",
+          "value": 10000.0,
+          "message": "the goal: the project now goes to official LEGO review and could become a real set"
+        }
+      ],
+      "history": [
+        {
+          "t": "2026-10-30T17:19:23+00:00",
+          "v": 161.0
+        }
+      ],
+      "fired": [
+        {
+          "trigger_id": "t1",
+          "at": "2026-10-30T17:19:23+00:00",
+          "value": 161.0,
+          "silent": true
+        }
+      ],
+      "last_checked": "2026-10-30T17:17:48+00:00",
+      "last_error": null
+    },
+    {
+      "id": "w2",
+      "url": "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5",
+      "metric": "days left",
+      "every_hours": 6.0,
+      "triggers": [
+        {
+          "id": "t1",
+          "op": "<=",
+          "value": 30.0,
+          "message": "countdown: time is running out"
+        },
+        {
+          "id": "t2",
+          "op": "<=",
+          "value": 7.0,
+          "message": "countdown: time is running out"
+        },
+        {
+          "id": "t3",
+          "op": "<=",
+          "value": 1.0,
+          "message": "countdown: time is running out"
+        }
+      ],
+      "history": [
+        {
+          "t": "2026-10-30T17:19:23+00:00",
+          "v": 421.0
+        }
+      ],
+      "fired": [],
+      "last_checked": "2026-10-30T17:19:23+00:00",
+      "last_error": null
+    }
+  ],
+  "unsupported": [],
+  "updated_at": "2026-10-30T17:19:23+00:00"
+}
