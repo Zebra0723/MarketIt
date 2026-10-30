@@ -3,15 +3,15 @@
   "channels": {
     "bluesky": {
       "day": "2026-10-30",
-      "count": 0,
-      "next_at": null
+      "count": 1,
+      "next_at": "2026-10-31T00:03:28+00:00"
     }
   },
   "style_scores": {},
   "best_hours": {},
   "last_stats_at": "2026-10-30T15:49:40+00:00",
   "approvals_issue": null,
-  "issues_synced_at": "2026-10-30T17:12:25+00:00",
+  "issues_synced_at": "2026-10-30T17:29:10+00:00",
   "processed_comments": [
     6526999883,
     6527084996,
@@ -19,7 +19,7 @@
     6528570320,
     6528862901
   ],
-  "comments_synced_at": "2026-10-30T17:12:25+00:00",
+  "comments_synced_at": "2026-10-30T17:29:10+00:00",
   "failed_issues": {},
   "ai_error_warned": {
     "1": "7060e14d9b21d215"

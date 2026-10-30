@@ -2,8 +2,10 @@
   "id": "1-the-golden-gate-bridge",
   "status": "active",
   "created_at": "2026-10-30T17:16:03+00:00",
-  "last_posted": {},
-  "post_count": 0,
+  "last_posted": {
+    "bluesky": "2026-10-30T17:33:28+00:00"
+  },
+  "post_count": 1,
   "source": {
     "type": "link",
     "link": "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5",
@@ -208,5 +210,5 @@
     }
   ],
   "unsupported": [],
-  "updated_at": "2026-10-30T17:19:23+00:00"
+  "updated_at": "2026-10-30T17:33:28+00:00"
 }
