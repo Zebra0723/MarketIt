@@ -77,6 +77,7 @@ It also collects likes, reposts and replies once a day and learns which styles a
 | `stop` | Stop for good (closing the issue does the same) |
 | `status` | Recent posts with their likes, plus watcher readings |
 | `notes: …` | Add more instructions; the AI re-reads everything |
+| `refresh` | Re-read the project page now (supporters, photos, creator) |
 
 Editing the issue (the link or notes) updates the item.
 

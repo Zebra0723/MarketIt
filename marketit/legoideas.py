@@ -53,16 +53,69 @@ def _find(pattern: str, text: str) -> float | None:
     return parse_number(m.group(1)) if m else None
 
 
+SUPPORTER_KEYS = r"supporters?(?:Count|Total)?|supportCount|totalSupporters|numSupporters|votes?(?:Count)?"
+DAYS_KEYS = r"daysLeft|daysRemaining|remainingDays|days_left"
+EXPIRY_KEYS = r"expiresAt|expirationDate|expiryDate|expireDate|expiresOn|deadline|endDate|expires_at"
+CREATOR_KEYS = r"username|userName|screenName|displayName|authorName|creatorName|alias|name"
+Q = r'\\?"'   # a quote, possibly escaped (data embedded inside JS strings)
+
+
+def _near_project(text: str, project_id: str | None, pattern: str) -> list[re.Match]:
+    """Matches of `pattern`, the ones closest after the project's id first (pages also list other projects)."""
+    matches = list(re.finditer(pattern, text))
+    if project_id and matches:
+        anchors = [m.start() for m in re.finditer(re.escape(project_id), text)]
+        if anchors:
+            def distance(m):
+                after = [m.start() - a for a in anchors if m.start() >= a]
+                return min(after) if after else 10**9
+            matches.sort(key=distance)
+    return matches
+
+
+def parse_structured(scripts: str, project_id: str | None = None) -> dict:
+    """Exact numbers from data embedded in the page's scripts, when present."""
+    from datetime import datetime, timezone
+
+    out = {"supporters": None, "days_left": None, "creator": None}
+    if not scripts:
+        return out
+    for m in _near_project(scripts, project_id, rf"{Q}(?:{SUPPORTER_KEYS}){Q}\s*:\s*{Q}?(\d+)"):
+        out["supporters"] = int(m.group(1))
+        break
+    for m in _near_project(scripts, project_id, rf"{Q}(?:{DAYS_KEYS}){Q}\s*:\s*{Q}?(\d+)"):
+        out["days_left"] = int(m.group(1))
+        break
+    if out["days_left"] is None:
+        for m in _near_project(scripts, project_id, rf"{Q}(?:{EXPIRY_KEYS}){Q}\s*:\s*{Q}(\d{{4}}-\d\d-\d\d[T0-9:.+\-Z]*)"):
+            try:
+                end = datetime.fromisoformat(m.group(1).replace("Z", "+00:00"))
+                end = end if end.tzinfo else end.replace(tzinfo=timezone.utc)
+                out["days_left"] = max(0, (end - datetime.now(timezone.utc)).days)
+                break
+            except ValueError:
+                continue
+    for owner in _near_project(scripts, project_id, rf"{Q}(?:author|creator|owner|submitter|user){Q}\s*:\s*\{{"):
+        window = scripts[owner.end(): owner.end() + 600]
+        name = re.search(rf"{Q}(?:{CREATOR_KEYS}){Q}\s*:\s*{Q}([^\"\\]{{2,40}}){Q}", window)
+        if name:
+            out["creator"] = name.group(1)
+            break
+    return out
+
+
+def project_id(url: str) -> str | None:
+    m = PROJECT_RE.match(url or "")
+    return m.group(2) if m else None
+
+
 def parse_stats(text: str) -> dict:
-    """Pull supporters / days left / creator from a project page's visible text."""
+    """Last-resort guess of supporters / days left from a project page's visible text."""
     n = r"(\d[\d.,]*\s?[kKmM]?)(?!\d)"
     supporters = _find(n + r"[^\d]{0,20}?\bsupporters?\b", text) or _find(r"\bsupporters?\b[^\d]{0,20}?" + n, text)
     days_left = _find(n + r"[^\d]{0,15}?\bdays?\s+(?:left|remaining|to go)\b", text) \
         or _find(r"\bdays?\s+(?:left|remaining)\b[^\d]{0,15}?" + n, text)
-    creator = None
-    m = re.search(r"\b(?:created\s+by|submitted\s+by|by)\s*\n?\s*@?([A-Za-z0-9_.\-]{3,30})\b", text)
-    if m and m.group(1).lower() not in ("the", "lego", "your", "this"):
-        creator = m.group(1)
+    creator = None   # too unreliable to guess from text ("by default" ...): structured data or the AI decide
     return {
         "supporters": int(supporters) if supporters is not None else None,
         "days_left": int(days_left) if days_left is not None else None,
@@ -109,3 +162,34 @@ def default_watchers(url: str, milestones: list[int], days_alerts: list[int], ev
             "triggers": [{"op": "<=", "value": d, "message": "countdown: time is running out"} for d in days_alerts],
         },
     ]
+
+
+def read_stats(page, llm=None) -> dict:
+    """Best available stats: page data first, then the AI reading the page, then a text guess."""
+    from . import prompts
+    from .llm import ask_json
+
+    stats = parse_structured(page.scripts, project_id(page.url))
+    stats["source"] = "page data"
+    if (stats["supporters"] is None or stats["days_left"] is None) and llm is not None:
+        try:
+            reply = ask_json(llm, prompts.stats_prompt(page.text))
+        except Exception:
+            reply = {}
+        for key in ("supporters", "days_left", "creator"):
+            value = reply.get(key) if isinstance(reply, dict) else None
+            if stats[key] is None and value not in (None, ""):
+                if key == "creator":
+                    stats[key] = str(value)[:40]
+                else:
+                    number = value if isinstance(value, (int, float)) else parse_number(str(value))
+                    if number is not None:
+                        stats[key] = int(number)
+                        stats["source"] = "AI"
+    if stats["supporters"] is None or stats["days_left"] is None:
+        guess = parse_stats(page.text)
+        for key in ("supporters", "days_left"):
+            if stats[key] is None and guess[key] is not None:
+                stats[key] = guess[key]
+                stats["source"] = "text guess"
+    return stats

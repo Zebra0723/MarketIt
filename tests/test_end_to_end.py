@@ -304,3 +304,13 @@ def test_unlabelled_product_ideas_issue_is_picked_up_with_thumbs_up(web, monkeyp
     [item] = all_items()
     assert item["profile"]["link"] == link and item["source"]["issue"] == 1
     assert "Got it" in gh.comments[-1][1]
+
+
+def test_refresh_command_rereads_page(web, config, fake_llm):
+    serve_lego(web, "10")
+    gh = FakeGitHub()
+    intake_from_issue(fake_llm, config, {"number": 6, "body": LEGO}, gh)
+    serve_lego(web, "2,481")
+    handle_comment(lambda: fake_llm, config, 6, "refresh", gh, {})
+    assert all_items()[0]["project"]["supporters"] == 2481
+    assert "Re-read the project page" in gh.comments[-1][1]

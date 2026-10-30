@@ -142,3 +142,28 @@ def save_state(state: dict) -> None:
 
 def media_dir() -> Path:
     return data_dir() / "media"
+
+
+def save_page_snapshot(url: str, page, stats: dict) -> None:
+    """Keep a copy of what MarketIt last read from a project page (for checking and debugging)."""
+    import re as _re
+
+    from . import legoideas
+
+    pid = legoideas.project_id(url) or "page"
+    hits = []
+    for m in _re.finditer(r'(?i)\\?"[A-Za-z_]*(?:support|vote|day|expir|author|creator|user)[A-Za-z_]*\\?"\s*:', page.scripts):
+        hits.append(page.scripts[m.start(): m.start() + 120].replace("\n", " "))
+        if len(hits) >= 150:
+            break
+    lines = [
+        f"# Snapshot of {url}", f"read at {iso()}", "",
+        f"title: {page.title}", f"description: {page.description}", "",
+        f"stats used: {stats}", "",
+        "## images", *page.images, "",
+        "## data keys found in scripts (first 150)", *hits, "",
+        "## visible text (first 20,000 characters)", page.text[:20000],
+    ]
+    out = data_dir() / "pages" / f"{pid}.txt"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines))

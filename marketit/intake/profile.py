@@ -8,7 +8,7 @@ from dataclasses import asdict
 from .. import legoideas, prompts
 from ..llm import ask_json
 from ..publishers import ALL, channel_guide, connected_channels
-from ..storage import iso, now
+from ..storage import iso, now, save_page_snapshot
 from ..textutil import slugify
 from .fetch import Page, fetch_page
 
@@ -55,8 +55,8 @@ def normalize_watchers(raw, default_url: str | None) -> list[dict]:
     return out
 
 
-def project_stats(page: Page | None, title_hint: str | None = None) -> dict:
-    stats = legoideas.parse_stats(page.text) if page else {"supporters": None, "days_left": None, "creator": None}
+def project_stats(page: Page | None, llm=None) -> dict:
+    stats = legoideas.read_stats(page, llm) if page else {"supporters": None, "days_left": None, "creator": None}
     stats["next_goal"] = legoideas.next_milestone(stats["supporters"])
     stats["updated_at"] = iso()
     return stats
@@ -79,7 +79,8 @@ def build_item(llm, config: dict, *, link: str, notes: str = "", source: dict | 
         raise ValueError("MarketIt only works with LEGO Ideas project links, like https://ideas.lego.com/product-ideas/…")
     link = legoideas.canonical_url(link)
     page = fetch_page(link)
-    stats = project_stats(page)
+    stats = project_stats(page, llm)
+    save_page_snapshot(link, page, stats)
     page_dict = asdict(page)
     page_dict["images"] = page_dict["images"][:5]
     page_dict["text"] = page_dict["text"][:6000]   # plenty for a profile; keeps the AI fast

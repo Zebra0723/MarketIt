@@ -48,9 +48,19 @@ def extract_metric_regex(text: str, metric: str) -> float | None:
 
 
 def read_metric(llm, url: str, metric: str, page_cache: dict) -> float:
+    from . import legoideas
+
     if url not in page_cache:
         page_cache[url] = fetch_page(url)
     page = page_cache[url]
+    if legoideas.is_project_url(url) and metric.lower() in ("supporters", "days left"):
+        key = ("stats", url)
+        if key not in page_cache:
+            page_cache[key] = legoideas.read_stats(page, llm)
+        value = page_cache[key]["supporters" if metric.lower() == "supporters" else "days_left"]
+        if value is None:
+            raise ValueError(f'couldn\'t find "{metric}" on {url}')
+        return float(value)
     value = extract_metric_regex(page.text, metric)
     if value is None and llm is not None:
         reply = ask_json(llm, prompts.metric_prompt(metric, page.text))
@@ -183,20 +193,24 @@ def check_item_watchers(llm, item: dict, page_cache: dict | None = None) -> list
             event["item_id"] = item["id"]
             events.append(event)
     if refreshed:
-        refresh_project_stats(item, page_cache)
+        refresh_project_stats(item, page_cache, llm)
     return events
 
 
-def refresh_project_stats(item: dict, page_cache: dict) -> None:
+def refresh_project_stats(item: dict, page_cache: dict, llm=None) -> None:
     """Keep the live numbers shown in posts and ads (supporters, days left) up to date."""
     from . import legoideas
+    from .storage import save_page_snapshot
 
-    page = page_cache.get(item.get("profile", {}).get("link"))
+    url = item.get("profile", {}).get("link")
+    page = page_cache.get(url)
     if page is None:
         return
+    fresh = page_cache.get(("stats", url)) or legoideas.read_stats(page, llm)
     stats = item.setdefault("project", {})
-    for key, value in legoideas.parse_stats(page.text).items():
+    for key, value in fresh.items():
         if value is not None:
             stats[key] = value
+    save_page_snapshot(url, page, stats)
     stats["next_goal"] = legoideas.next_milestone(stats.get("supporters"))
     stats["updated_at"] = iso()

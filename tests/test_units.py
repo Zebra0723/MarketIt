@@ -181,7 +181,7 @@ def test_project_urls():
 
 def test_parse_stats_from_page_text():
     text = "Floating Castle\nCreated by\nBrickWizard42\n1,046\nSupporters\n214 days left\n"
-    assert legoideas.parse_stats(text) == {"supporters": 1046, "days_left": 214, "creator": "BrickWizard42"}
+    assert legoideas.parse_stats(text) == {"supporters": 1046, "days_left": 214, "creator": None}
     assert legoideas.parse_stats("nothing")["supporters"] is None
 
 
@@ -304,3 +304,12 @@ def test_gemini_busy_retries_then_switches_model(isolated, monkeypatch):
     web.on("POST", f"{base}/gemini-3.8-flash-lite:generateContent", {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]})
     assert gemini.GeminiLLM("gemini-3.8-flash").complete("x") == "ok"
     assert len(web.calls_to(f"{base}/gemini-3.8-flash:")) == 4   # 1 try + 3 retries
+
+
+def test_structured_stats_prefer_this_projects_data():
+    pid = "6726571d-0a01-411f-b5ac-425634ecf4e5"
+    scripts = ('{"related":[{"id":"aaaaaaaa-1111","supportersCount":9000}]}'
+               f'self.__next_f.push([1,"{{\\"id\\":\\"{pid}\\",\\"supportersCount\\":2481,'
+               '\\"expiresAt\\":\\"2099-01-01T00:00:00Z\\",\\"author\\":{\\"username\\":\\"BridgeBuilder\\"}}"])')
+    stats = legoideas.parse_structured(scripts, pid)
+    assert stats["supporters"] == 2481 and stats["creator"] == "BridgeBuilder" and stats["days_left"] > 1000

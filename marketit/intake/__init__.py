@@ -81,7 +81,7 @@ def summary_markdown(item: dict, config: dict, drafts: list[dict] | None = None)
         lines.append("</details>")
     lines += [
         "",
-        "<sub>Commands (comment on this issue): `pause` · `resume` · `stop` · `status` · `notes: <extra instructions>`. "
+        "<sub>Commands (comment on this issue): `pause` · `resume` · `stop` · `status` · `refresh` · `notes: <extra instructions>`. "
         "Edit the issue to change the link or notes. Close it to stop.</sub>",
     ]
     return "\n".join(l for l in lines if l is not None)

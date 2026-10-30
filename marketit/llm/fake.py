@@ -72,6 +72,14 @@ class FakeLLM(LLM):
         limit = int(re.search(r"at most (\d+)", prompt).group(1))
         return {"text": body[: max(10, limit - 30)]}
 
+    def _stats(self, prompt):
+        from ..legoideas import parse_stats
+        text = _between(prompt, "<page_content>", "</page_content>")
+        guess = parse_stats(text)
+        creator = re.search(r"Created by\s+(\w+)", text)
+        return {"supporters": guess["supporters"], "days_left": guess["days_left"],
+                "creator": creator.group(1) if creator else None}
+
     def _metric(self, prompt):
         return {"value": None}
 

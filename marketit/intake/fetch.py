@@ -29,6 +29,7 @@ class Page:
     images: list[str] = field(default_factory=list)
     price: str | None = None
     site_name: str = ""
+    scripts: str = ""   # raw <script> contents: modern sites embed exact data (counts, names) here
 
 
 def _meta(soup: BeautifulSoup, *names: str) -> str:
@@ -87,6 +88,8 @@ def parse_html(url: str, html: str) -> Page:
 
     seen = set()
     page.images = [i for i in images if i.startswith("http") and not (i in seen or seen.add(i))][:12]
+
+    page.scripts = "\n".join(t.string or t.get_text() or "" for t in soup.find_all("script"))[:2_000_000]
 
     for tag in soup(["script", "style", "noscript", "svg", "nav", "footer", "header", "form", "iframe"]):
         tag.decompose()

@@ -86,7 +86,7 @@ def request_pending_approvals(gh, state: dict, config: dict, items: dict[str, di
 
 POST_CMD = re.compile(r"^\s*(approve|reject)\s+(P[0-9A-F]{6})\b", re.I)
 EDIT_CMD = re.compile(r"^\s*edit\s+(P[0-9A-F]{6})\s*:\s*(.+)", re.I | re.S)
-ITEM_CMD = re.compile(r"^\s*(pause|resume|stop|status|approve all|approve|reject)\s*$", re.I)
+ITEM_CMD = re.compile(r"^\s*(pause|resume|stop|status|refresh|approve all|approve|reject)\s*$", re.I)
 NOTES_CMD = re.compile(r"^\s*notes?\s*:\s*(.+)", re.I | re.S)
 
 
@@ -173,6 +173,12 @@ def handle_comment(llm_factory, config: dict, issue_number: int, body: str, gh, 
             replies.append({"pause": "⏸️ Paused.", "resume": "▶️ Resumed.", "stop": "⏹️ Stopped for good (comment `resume` to undo)."}[cmd])
         elif item and cmd == "status":
             replies.append(status_markdown(item, config))
+        elif item and cmd == "refresh":
+            try:
+                updated = update_notes(llm_factory(), config, item, "")
+                replies.append("🔄 Re-read the project page.\n\n" + summary_markdown(updated, config))
+            except Exception as exc:
+                replies.append(f"❌ Couldn't refresh: `{redact(str(exc))[:300]}`")
         elif item and cmd == "notes":
             try:
                 updated = update_notes(llm_factory(), config, item, extra)
