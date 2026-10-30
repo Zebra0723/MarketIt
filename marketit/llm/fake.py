@@ -25,58 +25,47 @@ class FakeLLM(LLM):
         return {}
 
     def _profile(self, prompt):
-        link = _between(prompt, "Link: ", "\n")
-        link = None if link.startswith("(") else link
         page_raw = _between(prompt, "<page_content>", "</page_content>")
         try:
             page = json.loads(page_raw) or {}
         except json.JSONDecodeError:
             page = {}
-        manual = _between(prompt, "<manual>", "</manual>")
         notes = _between(prompt, "<notes>", "</notes>")
-        title = page.get("title") or (manual.splitlines()[0].split(":", 1)[-1].strip() if manual else "Thing")
-        kind = "lego_ideas_project" if link and "ideas.lego.com" in link else "physical_product"
-        watchers = []
-        m = re.search(r"(\d[\d.,]*\s?[km]?)\s+(supporters|backers|downloads|stars|followers)", notes, re.I)
-        if m:
-            watchers.append({
-                "url": link, "metric": m.group(2).lower(), "every_hours": 24,
-                "triggers": [{"op": ">=", "value": parse_number(m.group(1)), "message": "celebrate"}],
-            })
-        rules = [l.strip("- ").strip() for l in notes.splitlines() if l.strip() and "(no notes)" not in l and not m]
+        extra = [parse_number(m) for m in re.findall(r"(\d[\d.,]*\s?[km]?)\s+supporters", notes, re.I)]
+        rules = [l.strip("- ").strip() for l in notes.splitlines()
+                 if l.strip() and "(no notes)" not in l and "supporters" not in l]
         return {
-            "kind": kind,
-            "title": title,
-            "summary": page.get("description") or f"{title}, worth a look.",
+            "title": page.get("title") or "Project",
+            "creator": None,
+            "summary": page.get("description") or "A fan-designed LEGO set.",
+            "theme": "castle",
             "facts": [page.get("description")] if page.get("description") else [],
-            "benefits": ["it's great"],
-            "audience": "people who would love it",
-            "tone": "friendly",
-            "hashtags": ["MarketIt", "NewThing"],
-            "price": page.get("price"),
-            "link": link,
+            "selling_points": ["it would look great on a shelf"],
+            "audience": "adult LEGO fans",
+            "tone": "enthusiastic",
+            "hashtags": ["LEGOIdeas", "AFOL"],
             "channels": ["bluesky", "mastodon", "pinterest", "telegram", "discord"],
             "posts_per_week": 3,
             "rules": rules,
             "end_date": None,
-            "watchers": watchers,
+            "extra_milestones": [e for e in extra if e],
             "unsupported": [],
         }
 
     def _post(self, prompt):
         title = re.search(r'"title": "([^"]*)"', prompt)
         title = title.group(1) if title else "this"
-        link = re.search(r"Include this link exactly once: (\S+)", prompt)
-        style = re.search(r"Style for this post: (\w+)", prompt)
-        if "MILESTONE" in prompt:
+        link = re.search(r"include this link exactly once: (\S+)", prompt)
+        style = re.search(r"Angle for this post: (\w+)", prompt)
+        if "MILESTONE" in prompt or "COUNTDOWN" in prompt:
             label = re.search(r'"label": "([^"]*)"', prompt)
-            text = f"We did it — {label.group(1) if label else 'a milestone'} Thank you all! {title}"
+            text = f"We did it — {label.group(1) if label else 'a milestone'} Thank you all! Support {title}"
         else:
             text = f"[{style.group(1) if style else 'post'}] Check out {title}! #MarketIt"
         if link:
             text += f" {link.group(1)}"
         return {"text": text, "title": title, "alt_text": f"Photo of {title}",
-                "image_headline": title, "image_prompt": f"a scene featuring {title}"}
+                "image_headline": f"Meet {title}"}
 
     def _shorten(self, prompt):
         body = prompt.split("\n\n", 1)[-1]

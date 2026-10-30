@@ -1,24 +1,47 @@
-"""Full flow with a fake AI and fake websites: issue -> approval -> publish -> milestone."""
+"""Full flow with a fake AI and a fake LEGO Ideas page: issue -> approval -> publish -> milestone."""
 
 import random
+
+from PIL import Image
 
 from marketit import runner
 from marketit.approvals import handle_comment
 from marketit.intake import intake_from_issue, sync_manual_items
-from marketit.storage import all_items, history_posts, load_state, queued_posts
+from marketit.storage import all_items, data_dir, history_posts, load_state, queued_posts
 
-from .conftest import FakeResponse, png_bytes
+from .conftest import FakeResponse
 
-LEGO = "https://ideas.lego.com/projects/123-castle"
+LEGO = "https://ideas.lego.com/projects/a6b7e5c1-6d8e-4c1e-8a3b-2a1f1d0e9c11"
+PHOTOS = {
+    "https://cdn.test/castle-main.jpg": (1600, 1200),
+    "https://cdn.test/castle-side.jpg": (1600, 900),
+    "https://cdn.test/castle-detail.jpg": (1000, 1000),
+}
 
 
-def lego_page(supporters):
+def lego_page(supporters, days_left=214):
+    imgs = "".join(f'<img src="{u}">' for u in list(PHOTOS)[1:])
     return FakeResponse(text=f"""<html><head>
-      <meta property="og:title" content="Floating Castle">
+      <title>Floating Castle | LEGO Ideas</title>
+      <meta property="og:title" content="Floating Castle | LEGO Ideas">
       <meta property="og:description" content="A castle on a cloud, made of LEGO bricks.">
-      <meta property="og:image" content="https://cdn.test/castle.jpg">
-      </head><body><h1>Floating Castle</h1><div>{supporters}</div><div>Supporters</div>
+      <meta property="og:image" content="{list(PHOTOS)[0]}">
+      </head><body><h1>Floating Castle</h1><div>Created by</div><div>BrickWizard42</div>
+      <div>{supporters}</div><div>Supporters</div><div>{days_left} days left</div>{imgs}
       <p>{"A whimsical build with towers, a drawbridge and a cloud base. " * 10}</p></body></html>""")
+
+
+def jpeg_bytes(size):
+    import io
+    buf = io.BytesIO()
+    Image.new("RGB", size, (90, 120, 200)).save(buf, "JPEG", quality=90)
+    return buf.getvalue()
+
+
+def serve_lego(web, supporters, days_left=214):
+    web.on("GET", LEGO, lego_page(supporters, days_left))
+    for url, size in PHOTOS.items():
+        web.on("GET", url, FakeResponse(content=jpeg_bytes(size)))
 
 
 class FakeGitHub:
@@ -59,75 +82,106 @@ def test_full_flow(web, monkeypatch, config, fake_llm):
     monkeypatch.setenv("MARKETIT_NOW", "2026-05-01T09:00:00+00:00")
     config["approvals"]["first_n"] = 1
     setup_bluesky(web, monkeypatch)
-    web.on("GET", LEGO, lego_page("850"))
-    web.on("GET", "https://cdn.test/castle.jpg", FakeResponse(content=png_bytes()))
+    serve_lego(web, "850")
     gh = FakeGitHub()
 
-    # 1. Owner opens an issue with a link + notes.
-    issue = {"number": 7, "body": f"### Link\n\n{LEGO}\n\n### Notes\n\nmake a special post when we hit 1k supporters\n\n### Images\n\nauto"}
+    # 1. Owner opens an issue with a LEGO Ideas link + notes.
+    issue = {"number": 7, "body": f"### LEGO Ideas link\n\n{LEGO}/updates\n\n### Notes\n\nalso celebrate 1,500 supporters"}
     item = intake_from_issue(fake_llm, config, issue, gh)
     assert item["id"] == "7-floating-castle"
-    assert item["profile"]["kind"] == "lego_ideas_project"
-    assert item["watchers"][0]["triggers"][0]["value"] == 1000
-    assert "Got it: **Floating Castle**" in gh.comments[-1][1]
-    assert "Reddit drafts" in gh.comments[-1][1]
+    assert item["profile"]["link"] == LEGO
+    assert item["profile"]["images"] == list(PHOTOS)
+    assert item["project"]["supporters"] == 850 and item["project"]["creator"] == "BrickWizard42"
+    milestones = [t["value"] for t in item["watchers"][0]["triggers"]]
+    assert 1000 in milestones and 1500 in milestones and 10000 in milestones
+    reply = gh.comments[-1][1]
+    assert "Got it: **Floating Castle**" in reply and "1,000, 1,500, 2,000" in reply
 
-    # 2. First run: watcher reads 850 (no milestone); first post waits for approval.
+    # 2. First run: the first post waits for approval; it has the ad + the original photos.
     summary = runner.prepare(config, fake_llm, random.Random(0))
     assert summary == {"milestones": 0, "queued": 1, "errors": []}
     [post] = queued_posts()
-    assert post["status"] == "awaiting_approval" and post["image"].startswith("media/")
-    assert LEGO in post["text"]
-    result = runner.publish_queue(config, gh)
-    assert result["published"] == []
-    assert "Approval needed" in gh.comments[-1][1] and gh.comments[-1][0] == 7
+    assert post["status"] == "awaiting_approval" and LEGO in post["text"]
+    assert len(post["extra_images"]) == 3
+    with Image.open(data_dir() / post["image"]) as ad:
+        assert ad.size == (1080, 1350)
+    # The extra photos are the project's original files, byte for byte.
+    assert (data_dir() / post["extra_images"][0]).read_bytes() == jpeg_bytes(PHOTOS["https://cdn.test/castle-main.jpg"])
+    runner.publish_queue(config, gh)
+    assert "Approval needed" in gh.comments[-1][1]
 
-    # 3. Owner approves by commenting; it gets published.
+    # 3. Owner approves; it's published with 4 images (ad + 3 project photos).
     handle_comment(lambda: fake_llm, config, 7, f"approve {post['id']}", gh, {})
     result = runner.publish_queue(config, gh)
     assert [p["id"] for p in result["published"]] == [post["id"]]
-    assert result["published"][0]["url"] == "https://bsky.app/profile/me.bsky.social/post/rkey1"
+    record = web.calls_to("https://bsky.social/xrpc/com.atproto.repo.createRecord")[-1][2]["json"]
+    assert len(record["record"]["embed"]["images"]) == 4
     assert load_state()["approved_count"] == 1
 
-    # 4. Next day the project passes 1,000 supporters: milestone posts automatically, once.
-    monkeypatch.setenv("MARKETIT_NOW", "2026-05-02T10:00:00+00:00")
-    web.on("GET", LEGO, lego_page("1,020"))
+    # 4. Seven hours later the project passes 1,000: a milestone post goes out automatically, once.
+    monkeypatch.setenv("MARKETIT_NOW", "2026-05-01T16:00:00+00:00")
+    serve_lego(web, "1,020")
     summary = runner.prepare(config, fake_llm, random.Random(0))
     assert summary["milestones"] == 1
     milestone = [p for p in queued_posts() if p["kind"] == "milestone"][0]
-    assert milestone["status"] == "ready" and "1,000 supporters!" in milestone["text"]
+    assert milestone["status"] == "ready" and milestone["template"] == "milestone"
+    assert "1,000 supporters!" in milestone["text"]
+    assert all_items()[0]["project"]["supporters"] == 1020
     runner.publish_queue(config, gh)
     assert any("Milestone posted" in body for _, body in gh.comments)
 
-    monkeypatch.setenv("MARKETIT_NOW", "2026-05-03T11:00:00+00:00")
-    web.on("GET", LEGO, lego_page("1,100"))
+    monkeypatch.setenv("MARKETIT_NOW", "2026-05-02T11:00:00+00:00")
+    serve_lego(web, "1,100")
     assert runner.prepare(config, fake_llm, random.Random(0))["milestones"] == 0
+
+    # 5. Countdown: 7 days left triggers a countdown ad.
+    monkeypatch.setenv("MARKETIT_NOW", "2026-05-03T11:00:00+00:00")
+    serve_lego(web, "1,150", days_left=7)
+    runner.prepare(config, fake_llm, random.Random(0))
+    countdown = [p for p in queued_posts() if p["kind"] == "milestone" and p["template"] == "countdown"]
+    assert countdown
 
     published = [p for p in history_posts() if p["status"] == "published"]
     assert {p["kind"] for p in published} == {"regular", "milestone"}
 
 
-def test_manual_item_and_stats(web, monkeypatch, config, fake_llm, tmp_path):
+def test_non_lego_links_are_rejected(web, config, fake_llm):
+    gh = FakeGitHub()
+    assert intake_from_issue(fake_llm, config, {"number": 2, "body": "https://www.etsy.com/listing/1"}, gh) is None
+    assert "LEGO Ideas project links" in gh.comments[-1][1]
+    assert all_items() == []
+
+
+def test_no_photos_means_no_post(web, monkeypatch, config, fake_llm):
     monkeypatch.setenv("MARKETIT_NOW", "2026-06-01T09:00:00+00:00")
     config["approvals"]["first_n"] = 0
     setup_bluesky(web, monkeypatch)
-    (tmp_path / "items" / "candle.yaml").write_text(
-        "name: Lavender Candle\ndescription: Hand-poured soy candle.\nprice: $12\nnotes: be cozy\nimage_mode: ai\n"
-    )
-    assert sync_manual_items(fake_llm, config) == ["manual-candle"]
+    web.on("GET", LEGO, FakeResponse(text="<html><body>Castle 10 supporters 30 days left " + "x " * 300 + "</body></html>"))
+    intake_from_issue(fake_llm, config, {"number": 4, "body": LEGO}, FakeGitHub())
+    summary = runner.prepare(config, fake_llm, random.Random(0))
+    assert summary["queued"] == 0 and "no project photos" in summary["errors"][0]
+    assert queued_posts() == []
+
+
+def test_file_item_and_stats(web, monkeypatch, config, fake_llm, tmp_path):
+    monkeypatch.setenv("MARKETIT_NOW", "2026-06-01T09:00:00+00:00")
+    config["approvals"]["first_n"] = 0
+    setup_bluesky(web, monkeypatch)
+    serve_lego(web, "300")
+    (tmp_path / "items" / "castle.yaml").write_text(f"link: {LEGO}\nnotes: be cozy\n")
+    assert sync_manual_items(fake_llm, config) == ["file-castle"]
     assert sync_manual_items(fake_llm, config) == []          # unchanged file -> no work
 
     runner.prepare(config, fake_llm, random.Random(0))
     [post] = queued_posts()
-    assert post["status"] == "ready" and post["image"]       # template card since AI images are off
+    assert post["status"] == "ready" and post["image"]
     runner.publish_queue(config, None)
 
     web.on("GET", "https://public.api.bsky.app/xrpc/app.bsky.feed.getPosts",
            {"posts": [{"likeCount": 10, "repostCount": 2, "replyCount": 1}]})
     monkeypatch.setenv("MARKETIT_NOW", "2026-06-03T09:00:00+00:00")
     assert runner.collect_stats(config, force=True) == 1
-    state = load_state()
-    assert state["style_scores"]["bluesky"][post["style"]]["n"] == 1
+    assert load_state()["style_scores"]["bluesky"][post["style"]]["n"] == 1
 
 
 def test_publish_failure_is_reported_and_secrets_redacted(web, monkeypatch, config, fake_llm):
@@ -135,8 +189,7 @@ def test_publish_failure_is_reported_and_secrets_redacted(web, monkeypatch, conf
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123456:SECRETSECRET")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "@mychan")
     config["approvals"]["first_n"] = 0
-    web.on("GET", LEGO, lego_page("10"))
-    web.on("GET", "https://cdn.test/castle.jpg", FakeResponse(content=png_bytes()))
+    serve_lego(web, "10")
     web.on("POST", "https://api.telegram.org/", FakeResponse(401, text="Unauthorized"))
     gh = FakeGitHub()
     intake_from_issue(fake_llm, config, {"number": 3, "body": LEGO}, gh)
@@ -148,15 +201,15 @@ def test_publish_failure_is_reported_and_secrets_redacted(web, monkeypatch, conf
 
 
 def test_item_commands(web, monkeypatch, config, fake_llm):
-    web.on("GET", LEGO, lego_page("10"))
+    serve_lego(web, "10")
     gh = FakeGitHub()
     intake_from_issue(fake_llm, config, {"number": 5, "body": LEGO}, gh)
     handle_comment(lambda: fake_llm, config, 5, "pause", gh, {})
     assert all_items()[0]["status"] == "paused"
     handle_comment(lambda: fake_llm, config, 5, "resume", gh, {})
     assert all_items()[0]["status"] == "active"
-    handle_comment(lambda: fake_llm, config, 5, "notes: post when we hit 5k supporters", gh, {})
-    assert all_items()[0]["watchers"][0]["triggers"][0]["value"] == 5000
+    handle_comment(lambda: fake_llm, config, 5, "notes: also celebrate 1,750 supporters", gh, {})
+    assert 1750 in [t["value"] for t in all_items()[0]["watchers"][0]["triggers"]]
 
 
 class SyncGitHub(FakeGitHub):
@@ -174,11 +227,10 @@ def test_sync_catches_up_on_issues_and_comments(web, monkeypatch, config, fake_l
     monkeypatch.setenv("MARKETIT_NOW", "2026-07-01T09:00:00+00:00")
     config["approvals"]["first_n"] = 1
     setup_bluesky(web, monkeypatch)
-    web.on("GET", LEGO, lego_page("100"))
-    web.on("GET", "https://cdn.test/castle.jpg", FakeResponse(content=png_bytes()))
+    serve_lego(web, "100")
     gh = SyncGitHub()
-    mine = {"number": 11, "state": "open", "title": "Market: castle", "body": LEGO, "author_association": "OWNER"}
-    stranger = {"number": 12, "state": "open", "title": "spam", "body": "https://spam.test", "author_association": "NONE"}
+    mine = {"number": 11, "state": "open", "title": "Promote: castle", "body": LEGO, "author_association": "OWNER"}
+    stranger = {"number": 12, "state": "open", "title": "spam", "body": LEGO, "author_association": "NONE"}
     gh.issues = [mine, stranger]
 
     assert sync(config, lambda: fake_llm, gh)["issues"] == 1

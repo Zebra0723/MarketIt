@@ -20,7 +20,7 @@ class Facebook(Publisher):
     def _api(self):
         return f"https://graph.facebook.com/{self.config['meta']['graph_version']}"
 
-    def publish(self, post, image_path, image_url):
+    def publish(self, post, image_path, image_url, extra_paths=()):
         page, token = env("FACEBOOK_PAGE_ID"), env("FACEBOOK_PAGE_TOKEN")
         if image_path:
             resp = http.post(

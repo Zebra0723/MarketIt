@@ -11,12 +11,13 @@ llm:
     ollama: llama3.1
     claude: claude-opus-5-5
 
-images:
-  # Used when an item's image mode is "ai" (or "auto" with no photos).
-  # pollinations: free, no account needed
-  # cloudflare: free daily allowance, needs CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN
-  # none: never generate; fall back to template cards
-  ai_provider: pollinations
+lego:
+  # Supporter counts that get a celebration post (10,000 = LEGO review).
+  # Add more in an item's notes, e.g. "also celebrate 1,500".
+  milestones: [100, 250, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
+  days_left_alerts: [30, 7, 1]   # countdown posts when this many days are left
+  check_every_hours: 6           # how often to read the project page
+  posts_per_week: 3              # default regular posts per channel (notes can change it)
 
 approvals:
   # Number of posts you approve by hand before MarketIt goes fully automatic.

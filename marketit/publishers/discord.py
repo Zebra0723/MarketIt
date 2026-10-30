@@ -19,8 +19,9 @@ class Discord(Publisher):
     style_notes = "Casual community announcement. Can use **bold** and emoji."
     secrets = ("DISCORD_WEBHOOK_URL",)
     max_image_bytes = 8_000_000
+    max_images = 4
 
-    def publish(self, post, image_path, image_url):
+    def publish(self, post, image_path, image_url, extra_paths=()):
         url = env("DISCORD_WEBHOOK_URL") + "?wait=true"
         payload = {"content": post["text"][:2000], "allowed_mentions": {"parse": []}}
         try:
@@ -28,7 +29,8 @@ class Discord(Publisher):
                 resp = http.post(
                     url,
                     data={"payload_json": json.dumps(payload)},
-                    files={"files[0]": (image_path.name, image_path.read_bytes(), "image/jpeg")},
+                    files={f"files[{i}]": (p.name, p.read_bytes(), "image/jpeg")
+                           for i, p in enumerate([image_path, *extra_paths][:4])},
                 ).json()
             else:
                 resp = http.post(url, json=payload).json()

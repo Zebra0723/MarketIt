@@ -48,7 +48,7 @@ class X(Publisher):
     style_notes = "Short and punchy; links count as 23 characters."
     secrets = ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")
 
-    def publish(self, post, image_path, image_url):
+    def publish(self, post, image_path, image_url, extra_paths=()):
         auth = oauth1_header("POST", API, env("X_API_KEY"), env("X_API_SECRET"), env("X_ACCESS_TOKEN"), env("X_ACCESS_SECRET"))
         try:
             data = http.post(API, json={"text": post["text"]}, headers={"Authorization": auth}).json()["data"]

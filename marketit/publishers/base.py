@@ -21,6 +21,7 @@ class Publisher:
     secrets: tuple[str, ...] = ()
     image_size: tuple[int, int] | None = None   # exact crop (w, h); None = keep aspect ratio
     max_image_bytes = 5_000_000
+    max_images = 1                # the ad + (max_images - 1) extra project photos
 
     def __init__(self, config: dict):
         self.config = config
@@ -31,8 +32,8 @@ class Publisher:
 
         return all(env(s) for s in cls.secrets)
 
-    def publish(self, post: dict, image_path: Path | None, image_url: str | None) -> dict:
-        """Post it. Returns {"id": ..., "url": ...}."""
+    def publish(self, post: dict, image_path: Path | None, image_url: str | None, extra_paths: list[Path] = ()) -> dict:
+        """Post it (ad image first, then any extra photos). Returns {"id": ..., "url": ...}."""
         raise NotImplementedError
 
     def fetch_metrics(self, record: dict) -> dict | None:

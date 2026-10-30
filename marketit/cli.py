@@ -20,7 +20,7 @@ def _llm(args, config):
 def cmd_add(args, config):
     from .intake import add_from_cli, summary_markdown
 
-    item = add_from_cli(_llm(args, config), config, args.link, args.notes or "", args.images, manual=args.manual or "")
+    item = add_from_cli(_llm(args, config), config, args.link, args.notes or "")
     print(summary_markdown(item, config))
     print(f"\nSaved as item '{item['id']}'. Try: python -m marketit preview {item['id']}")
 
@@ -75,7 +75,7 @@ def cmd_preview(args, config):
     import random
 
     from .generate import write_post
-    from .images import prepare_post_image
+    from .images import prepare_post_images
     from .publishers import ALL, get_publisher
     from .storage import all_items, history_posts, load_item, load_state
 
@@ -89,10 +89,10 @@ def cmd_preview(args, config):
             publisher = get_publisher(channel, config)
             post = write_post(llm, item, publisher, state, config, history_posts(), rng)
             post["id"] = f"preview-{item['id']}-{channel}"
-            image = prepare_post_image(item, post, publisher, config, rng)
-            print(f"=== {ALL[channel].label} · {item['profile']['title']} · style {post['style']}")
+            image, extras = prepare_post_images(item, post, publisher)
+            print(f"=== {ALL[channel].label} · {item['profile']['title']} · {post['template']} ad · angle {post['style']}")
             print(post["text"])
-            print(f"[image: data/{image}]\n" if image else "[no image]\n")
+            print(f"[ad: data/{image}]  [+{len(extras)} project photos]\n")
 
 
 def cmd_stats(args, config):
@@ -154,7 +154,6 @@ def cmd_doctor(args, config):
         ok = cls.configured()
         missing = [] if ok else [s for s in cls.secrets if not __import__("os").environ.get(s)]
         print(f"{'✅' if ok else '·'} {cls.label:<14} {'' if ok else 'missing: ' + ', '.join(missing)}")
-    print("AI images:", config["images"]["ai_provider"])
 
 
 def main(argv=None):
@@ -163,11 +162,9 @@ def main(argv=None):
     parser.add_argument("--fake-ai", action="store_true", help="use a built-in fake AI (for trying things without keys)")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    p = sub.add_parser("add", help="add something to market")
-    p.add_argument("link", nargs="?")
+    p = sub.add_parser("add", help="add a LEGO Ideas project")
+    p.add_argument("link", help="https://ideas.lego.com/projects/...")
     p.add_argument("--notes", default="")
-    p.add_argument("--images", choices=["auto", "link", "ai"], default="auto")
-    p.add_argument("--manual", help="details, if there's no link")
     p.set_defaults(fn=cmd_add)
 
     sub.add_parser("sync", help="(workflow) process item issues and comment commands").set_defaults(fn=cmd_sync)

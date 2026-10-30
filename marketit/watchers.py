@@ -68,9 +68,9 @@ def is_due(watcher: dict) -> bool:
     return now() - last >= timedelta(hours=watcher["every_hours"] * 0.9)
 
 
-def _suspicious(prev: float | None, value: float) -> bool:
-    if prev is None or prev < 20:
-        return False
+def _suspicious(prev: float | None, value: float, metric: str) -> bool:
+    if prev is None or prev < 20 or "day" in metric.lower():
+        return False  # countdowns legitimately drop, and jump when a project earns extra time
     return value < prev * 0.5 or value > prev * 20
 
 
@@ -90,7 +90,7 @@ def evaluate(watcher: dict, value: float) -> list[dict]:
     prev = history[-1]["v"] if history else None
     t_now = iso()
 
-    if _suspicious(prev, value):
+    if _suspicious(prev, value, watcher.get("metric", "")):
         suspect = watcher.get("suspect")
         if not suspect or abs(suspect - value) > max(1, value * 0.1):
             watcher["suspect"] = value
@@ -146,16 +146,31 @@ def evaluate(watcher: dict, value: float) -> list[dict]:
                 "label": _label(op, value, hit, watcher["metric"], trig.pop("_increase", None), trig.get("window_hours")),
                 "message": trig.get("message", ""),
             })
-    return events
+    return _most_relevant(events, watcher)
+
+
+def _most_relevant(events: list[dict], watcher: dict) -> list[dict]:
+    """If one reading passes several thresholds at once (e.g. 240 -> 510 passes 250 and 500),
+    post only about the most significant one; the others still count as fired."""
+    ops = {t["id"]: t["op"] for t in watcher.get("triggers", [])}
+    best: dict[str, dict] = {}
+    for e in events:
+        op = ops[e["trigger_id"]]
+        cur = best.get(op)
+        if cur is None or (e["threshold"] < cur["threshold"] if op == "<=" else e["threshold"] > cur["threshold"]):
+            best[op] = e
+    return [e for e in events if best.get(ops[e["trigger_id"]]) is e]
 
 
 def check_item_watchers(llm, item: dict, page_cache: dict | None = None) -> list[dict]:
     """Check every due watcher on an item. Returns milestone events (with item_id)."""
     page_cache = {} if page_cache is None else page_cache
     events = []
+    refreshed = False
     for watcher in item.get("watchers", []):
         if not is_due(watcher):
             continue
+        refreshed = True
         watcher["last_checked"] = iso()
         try:
             value = read_metric(llm, watcher["url"], watcher["metric"], page_cache)
@@ -167,4 +182,21 @@ def check_item_watchers(llm, item: dict, page_cache: dict | None = None) -> list
         for event in evaluate(watcher, value):
             event["item_id"] = item["id"]
             events.append(event)
+    if refreshed:
+        refresh_project_stats(item, page_cache)
     return events
+
+
+def refresh_project_stats(item: dict, page_cache: dict) -> None:
+    """Keep the live numbers shown in posts and ads (supporters, days left) up to date."""
+    from . import legoideas
+
+    page = page_cache.get(item.get("profile", {}).get("link"))
+    if page is None:
+        return
+    stats = item.setdefault("project", {})
+    for key, value in legoideas.parse_stats(page.text).items():
+        if value is not None:
+            stats[key] = value
+    stats["next_goal"] = legoideas.next_milestone(stats.get("supporters"))
+    stats["updated_at"] = iso()

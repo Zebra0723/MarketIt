@@ -25,7 +25,7 @@ class Pinterest(Publisher):
     def _auth(self):
         return {"Authorization": f"Bearer {env('PINTEREST_ACCESS_TOKEN')}"}
 
-    def publish(self, post, image_path, image_url):
+    def publish(self, post, image_path, image_url, extra_paths=()):
         if not image_path:
             raise PublishError("Pinterest needs an image", permanent=True)
         body = {

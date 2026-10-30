@@ -20,7 +20,7 @@ DEFAULTS: dict = {
             "claude": "claude-opus-5-5",
         },
     },
-    "images": {"ai_provider": "pollinations"},
+    "lego": {},
     "approvals": {"first_n": 5},
     "channels": {},
     "posting": {"explore_rate": 0.2, "min_hours_between_same_item": 20, "stats_every_hours": 20},

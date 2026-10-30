@@ -1,10 +1,14 @@
 # MarketIt
 
-MarketIt markets anything you give it on social media, automatically and for free.
+MarketIt promotes **LEGO Ideas projects** on social media, automatically and for free.
 
-You give it a link (a product, a service, an app, a Lego Ideas project, a Kickstarter, anything) and optional notes. The AI works out what the link is and who it's for, writes posts in the right style for each platform, makes or picks images, and posts on a schedule. Over time it learns which kinds of posts get the most engagement.
+Paste a LEGO Ideas project link. MarketIt then:
 
-It runs entirely on **GitHub Actions** (free), uses **free AI tiers**, and stores everything in this repo, so there is no server and no database.
+- reads the project's photos, supporters, days left and creator;
+- posts on a schedule with a clean, minimal ad built around the project's own photos, plus the photos themselves and a link to support the project;
+- celebrates every milestone (100, 250, 500, 1K, then every 1K up to 10K) and counts down the final days.
+
+It runs entirely on **GitHub Actions** (free), uses **free AI tiers**, and stores everything in this repo.
 
 ---
 
@@ -29,22 +33,18 @@ Add the secrets for the channels you want; see the [channel table](#channels) be
 2. Go to **Settings → Privacy and security → App passwords** and create an app password.
 3. Add two secrets: `BLUESKY_HANDLE` (e.g. `yourname.bsky.social`) and `BLUESKY_APP_PASSWORD`.
 
-### 4. Market something
-Go to **Issues → New issue → 📣 Market something**:
+### 4. Add your project
+Go to **Issues → New issue → 🧱 Promote a LEGO Ideas project**:
 
-- **Link:** paste a link.
-- **Notes (optional):** anything in plain English. For example: *"Check this Lego Ideas project every day and make a special post when we hit 1k supporters, then 5k and 10k. Aim at adult Lego fans."*
-- **Images:** choose one:
-  - `auto` (default): the AI decides.
-  - `link`: use the photos from the page.
-  - `ai`: AI-generated images.
+- **LEGO Ideas link:** e.g. `https://ideas.lego.com/projects/…`
+- **Notes (optional):** anything in plain English. For example: *"Aim at castle fans. Mention the working drawbridge. Also celebrate 1,500 supporters."*
 
 Within a minute or two MarketIt replies on the issue with what it understood:
-- what the item is and who it's for
+- the current supporters and days left
+- how many project photos it found
+- the milestones and countdowns it will post about
 - which channels it will use
-- the rules it took from your notes
-- the watchers it set up
-- any notes it won't follow, and why
+- the rules it took from your notes, and any it won't follow (with why)
 - a couple of Reddit drafts
 
 ### 5. Approve your first 5 posts
@@ -80,7 +80,12 @@ It also collects likes, reposts and replies once a day and learns which styles a
 
 Editing the issue (the link or notes) updates the item.
 
-**Watchers** come from your notes, for example *"check daily"*, *"post when we hit 1k supporters"*, *"every 1000 backers"* or *"when it gains 100 in a day"*. They read the number on the page on that schedule. Each milestone posts **once**. Milestones you've already passed when the watcher is set up don't trigger a post. A sudden implausible jump or drop is ignored until the next check confirms it.
+**Milestones** come built in: 100, 250, 500, 1K, then every 1K up to 10K (LEGO review), plus countdown posts at 30, 7 and 1 days left. You can add more in your notes, e.g. *"also celebrate 1,500"*, or change the defaults under `lego:` in `config.yaml`.
+
+- MarketIt reads the project page every 6 hours.
+- Each milestone posts **once**. Milestones you'd already passed before adding the project are skipped.
+- If one check jumps past several milestones, only the biggest gets a post.
+- A sudden implausible drop in supporters is ignored until the next check confirms it.
 
 ---
 
@@ -109,40 +114,48 @@ Run `python -m marketit doctor` to see what's connected.
 
 ---
 
-## Images
+## The ads
 
-- **`link`**: photos from the page, cropped and compressed for each platform. Only use photos you have the right to use. For your own products or projects, you're fine.
-- **`ai`**: free AI art from [Pollinations](https://pollinations.ai), which needs no account. To use Cloudflare Workers AI instead, set `images.ai_provider: cloudflare` and add `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. AI art is used as mood or promo art, never passed off as the real product.
-- **`auto`**: real photos when the page has any, sometimes as a branded card with a headline and price. Uses AI art when there are no photos.
-- If an image service is down, MarketIt draws a clean template card instead. Milestones get a celebration card, e.g. "1,000 SUPPORTERS!".
+Every post has a designed ad: minimal, lots of white space, Inter typography, one accent colour. There are four layouts:
+
+| Layout | Used for |
+|---|---|
+| **Milestone** | "1,000 supporters", with what the milestone means (e.g. "Extra time unlocked", "Headed to LEGO review") |
+| **Countdown** | "7 days left", plus the next supporter goal |
+| **Progress** | A headline about the build, live stats (supporters / to next goal / days left) |
+| **Gallery** | Three of the project's photos plus a headline |
+
+Every ad shows progress toward 10,000 and ends with **"Support it on LEGO Ideas"** and the project link.
+
+**Photos:** MarketIt only uses the exact photos from the project's LEGO Ideas page. They're shown whole: never cropped, filtered, drawn over or replaced with AI images, only scaled to fit. On Bluesky, Mastodon, Telegram and Discord, posts also include up to 3 of the project's photos as the original files (only scaled down if a platform's size limit requires it). If MarketIt can't find any photos on the page, it doesn't post. It tells you why instead.
+
+To see sample posts and ads without posting anything:
+
+```bash
+python -m marketit preview
+```
+
+The ads are saved to `data/media/`.
 
 ---
 
-## The manual way
+## Adding projects without an issue
 
-If there's no link, use the issue form's **Manual details** box. You can also add a YAML file to `items/`:
+You can also add a project as a YAML file in `items/`:
 
 ```yaml
-# items/candle.yaml
-name: Lavender Candle
-description: Hand-poured soy candle, burns 40 hours.
-price: $12
-where_to_buy: Etsy shop "CozyWicks"
-link: https://example.com/candle      # optional
-notes: Cozy autumn vibes. Push harder in December.
-image_mode: link                      # auto | link | ai
-images:                               # optional: URLs or paths in this repo
-  - items/photos/candle1.jpg
-active: true                          # false = paused
+# items/castle.yaml
+link: https://ideas.lego.com/projects/…
+notes: Aim at castle fans. Also celebrate 1,500 supporters.
+active: true          # false = paused
 ```
-
-MarketIt picks up new or changed files on its next run.
 
 ---
 
 ## Settings (`config.yaml`)
 
 - **AI providers:** which ones to use, in fallback order, and which model each uses. Claude (paid) is supported if you add `ANTHROPIC_API_KEY`.
+- **`lego`:** milestones, countdown days, how often to check the page, posts per week.
 - **`daily_cap`:** posts per day for each channel.
 - **`explore_rate`:** how often MarketIt tries a non-winning style.
 - **Approvals:** how many posts need your approval before it goes fully automatic.
@@ -160,10 +173,10 @@ pip install -r requirements.txt
 export GEMINI_API_KEY=...
 ```
 
-Add an item (`--notes` and `--images` are optional):
+Add a project (`--notes` is optional):
 
 ```bash
-python -m marketit add https://ideas.lego.com/projects/... --notes "post at 1k supporters" --images auto
+python -m marketit add https://ideas.lego.com/projects/... --notes "aim at castle fans"
 ```
 
 See sample posts for every channel without posting anything:
@@ -190,10 +203,10 @@ Approve a waiting post (`--reject` and `--text "..."` also work):
 python -m marketit approve P1A2B3
 ```
 
-Try everything without any keys using `--fake-ai`:
+Try it without an AI key using `--fake-ai`:
 
 ```bash
-python -m marketit --fake-ai add --manual "name: Test thing"
+python -m marketit --fake-ai add https://ideas.lego.com/projects/...
 ```
 
 For Ollama (free, runs on your machine), set `OLLAMA_HOST=http://localhost:11434`.
@@ -214,7 +227,7 @@ pip install pytest && python -m pytest
 
 ## Safety
 
-- Facts come only from the link and your notes. The AI is told never to invent prices, reviews or numbers.
+- Facts come only from the project page and your notes. The AI is told never to invent piece counts, features or numbers, and never to imply LEGO made or endorses the project.
 - Page content is treated as untrusted data, so instructions hidden in a web page are ignored.
 - Only the repo owner, members and collaborators can add items or approve posts. Issues from strangers on a public repo are ignored.
 - Secrets live in GitHub Secrets and are removed from logs and issue comments.

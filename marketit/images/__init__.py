@@ -1,116 +1,150 @@
-"""Pick or make the image for a post, then size it for the platform.
+"""Images for posts: a designed ad (see ads.py) plus the project's own photos from its LEGO Ideas page.
 
-Image modes (per item):
-  link  - photos found at the item's link (or listed in a manual item)
-  ai    - AI-generated promo art
-  auto  - real photos when there are any (sometimes as a branded card), AI art otherwise
+Photos are never cropped, filtered or drawn on. Extra photos are posted as the original files
+whenever the platform's size limit allows; otherwise they're only scaled down.
 """
 
 from __future__ import annotations
 
 import io
 import logging
-import random
-from pathlib import Path
+from functools import lru_cache
 
 from PIL import Image, ImageOps
 
 from .. import http
-from ..config import ROOT
 from ..storage import data_dir, media_dir, now
-from . import ai_gen, cards
+from . import ads
 
 log = logging.getLogger(__name__)
+DEFAULT_SIZE = (1080, 1350)   # 4:5, the best-performing feed shape
+
+
+@lru_cache(maxsize=32)
+def _download(src: str) -> bytes:
+    return http.get(src, timeout=30).content
 
 
 def load_image(src: str) -> Image.Image | None:
-    """Load a photo from a URL or a repo-relative path. Returns None if unusable."""
+    """Load a photo from a URL. Returns None if it's missing, broken or too small."""
     try:
-        if src.startswith("http"):
-            raw = http.get(src, timeout=30).content
-        else:
-            path = Path(src)
-            raw = (path if path.is_absolute() else ROOT / path).read_bytes()
-        im = Image.open(io.BytesIO(raw))
+        im = Image.open(io.BytesIO(_download(src)))
         im.load()
         im = ImageOps.exif_transpose(im).convert("RGB")
     except Exception as exc:
         log.info("skipping image %s: %s", src, exc)
         return None
-    if min(im.size) < 250:
+    if min(im.size) < 300:
         return None
     return im
 
 
-def first_photo(item: dict, offset: int = 0) -> Image.Image | None:
-    photos = item["profile"].get("images") or []
-    for i in range(len(photos)):
-        im = load_image(photos[(offset + i) % len(photos)])
+def project_photos(item: dict, offset: int = 0, limit: int = 4) -> list[tuple[str, Image.Image]]:
+    """Usable (url, photo) pairs, rotated so consecutive posts lead with different shots."""
+    urls = item["profile"].get("images") or []
+    if not urls:
+        return []
+    ordered = urls[offset % len(urls):] + urls[: offset % len(urls)]
+    photos = []
+    for url in ordered:
+        im = load_image(url)
         if im:
-            return im
-    return None
+            photos.append((url, im))
+        if len(photos) >= limit:
+            break
+    return photos
 
 
-def fit_for_platform(im: Image.Image, size: tuple[int, int] | None, max_bytes: int) -> bytes:
+def original_photo_bytes(url: str, im: Image.Image, max_bytes: int) -> bytes:
+    """The photo file exactly as published if it's a JPEG within the limit; else a faithful re-encode."""
+    raw = _download(url)
+    if raw[:3] == b"\xff\xd8\xff" and len(raw) <= max_bytes:
+        return raw
+    return encode(im, None, max_bytes)
+
+
+def project_card_info(item: dict) -> dict:
+    stats = item.get("project") or {}
+    return {
+        "title": item["profile"].get("title"),
+        "creator": stats.get("creator"),
+        "supporters": stats.get("supporters"),
+        "days_left": stats.get("days_left"),
+        "url": item["profile"].get("link") or "",
+    }
+
+
+def choose_template(post: dict, photo_count: int, post_number: int) -> str:
+    if post.get("kind") == "milestone":
+        return "countdown" if post.get("milestone", {}).get("metric") == "days left" else "milestone"
+    if photo_count >= 3 and post_number % 2 == 1:
+        return "gallery"
+    return "progress"
+
+
+def render_ad(item: dict, post: dict, height: int = 1350, photos=None) -> Image.Image:
+    offset = item.get("post_count", 0)
+    photos = [im for _, im in project_photos(item, offset)] if photos is None else photos
+    info = project_card_info(item)
+    template = choose_template(post, len(photos), offset)
+    post["template"] = template
+    headline = post.get("image_headline") or info["title"] or ""
+    if template == "milestone":
+        m = post.get("milestone") or {}
+        if m.get("value") is not None:
+            info["supporters"] = int(m["value"])
+        return ads.milestone_ad(photos, info, int(m.get("threshold") or info["supporters"] or 0), height)
+    if template == "countdown":
+        m = post.get("milestone") or {}
+        days = int(m.get("value") if m.get("value") is not None else info["days_left"] or 0)
+        info["days_left"] = days
+        return ads.countdown_ad(photos, info, days, height)
+    if template == "gallery":
+        return ads.gallery_ad(photos, info, headline, height)
+    return ads.progress_ad(photos, info, headline, height)
+
+
+def encode(im: Image.Image, size: tuple[int, int] | None, max_bytes: int) -> bytes:
     if size:
-        im = ImageOps.fit(im, size, Image.LANCZOS)
+        im = ImageOps.fit(im, size, Image.LANCZOS) if im.size != size else im
     else:
         im = im.copy()
-        im.thumbnail((2000, 2000), Image.LANCZOS)
-    for quality in (90, 82, 74, 66, 58, 50):
+        im.thumbnail((2400, 2400), Image.LANCZOS)
+    for quality in (95, 90, 84, 76, 68, 60):
         buf = io.BytesIO()
         im.save(buf, "JPEG", quality=quality, optimize=True, progressive=True)
         if buf.tell() <= max_bytes:
             return buf.getvalue()
-        if quality == 66:
-            im.thumbnail((int(im.width * 0.75), int(im.height * 0.75)), Image.LANCZOS)
+        if quality == 76:
+            im.thumbnail((int(im.width * 0.8), int(im.height * 0.8)), Image.LANCZOS)
     return buf.getvalue()
 
 
-def make_base_image(item: dict, post: dict, config: dict, rng: random.Random) -> Image.Image | None:
-    """The image before platform sizing, following the item's image mode."""
-    mode = item.get("image_mode", "auto")
-    offset = item.get("post_count", 0)
-    profile = item["profile"]
-    headline = post.get("image_headline") or profile.get("title", "")
-    milestone = post.get("kind") == "milestone"
-
-    if mode in ("link", "auto"):
-        photo = first_photo(item, offset)
-        if photo:
-            if milestone:
-                return cards.milestone_card(photo, post.get("milestone_label", headline), profile.get("title", ""))
-            if mode == "auto" and rng.random() < 0.3:
-                return cards.promo_card(photo, headline, profile.get("price"))
-            return photo
-        if mode == "link":
-            return cards.promo_card(None, headline, profile.get("price"))
-
-    art = None
-    if post.get("image_prompt"):
-        art = ai_gen.generate(post["image_prompt"], config, seed=rng.randint(1, 10**6))
-    if milestone:
-        return cards.milestone_card(art, post.get("milestone_label", headline), profile.get("title", ""))
-    if art:
-        return art
-    return cards.promo_card(None, headline, profile.get("price"))
-
-
-def prepare_post_image(item: dict, post: dict, publisher, config: dict, rng: random.Random | None = None) -> str | None:
-    """Create the image file for a queued post. Returns its path relative to data/."""
-    rng = rng or random.Random()
-    try:
-        base = make_base_image(item, post, config, rng)
-    except Exception as exc:
-        log.warning("image creation failed for %s: %s", item["id"], exc)
-        base = None
-    if base is None:
-        return None
-    data = fit_for_platform(base, publisher.image_size, publisher.max_image_bytes)
-    out = media_dir() / f"{post['id']}.jpg"
+def _save(post_id: str, suffix: str, data: bytes) -> str:
+    out = media_dir() / f"{post_id}{suffix}.jpg"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(data)
     return str(out.relative_to(data_dir()))
+
+
+def prepare_post_images(item: dict, post: dict, publisher) -> tuple[str, list[str]]:
+    """Render the ad (sized for the platform) and add the project's own photos.
+
+    Returns (ad path, [extra photo paths]), relative to data/. Raises ads.NoPhotosError if the
+    project page had no usable photos, so nothing is posted without them.
+    """
+    offset = item.get("post_count", 0)
+    photos = project_photos(item, offset)
+    target = publisher.image_size or DEFAULT_SIZE
+    height = round(ads.W * target[1] / target[0])
+    ad = render_ad(item, post, height, [im for _, im in photos])
+    main = _save(post["id"], "", encode(ad, target if publisher.image_size else None, publisher.max_image_bytes))
+
+    extras = []
+    room = min(3, publisher.max_images - 1)
+    for i, (url, im) in enumerate(photos[:room]):
+        extras.append(_save(post["id"], f"-{i + 1}", original_photo_bytes(url, im, publisher.max_image_bytes)))
+    return main, extras
 
 
 def prune_media(keep_days: int) -> int:

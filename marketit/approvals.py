@@ -36,18 +36,19 @@ def approval_issue(gh, state: dict) -> int | None:
     return number
 
 
-def approval_comment(post: dict, item: dict, remaining: int, image_url: str | None) -> str:
+def approval_comment(post: dict, item: dict, remaining: int, image_url: str | None, extra_urls=()) -> str:
     label = ALL[post["channel"]].label
     lines = [
         f"### 📝 Approval needed — {label} post `{post['id']}`",
-        f"<sub>{'Milestone' if post['kind'] == 'milestone' else 'Style: ' + str(post.get('style'))} · "
+        f"<sub>{'Milestone' if post['kind'] == 'milestone' else 'Angle: ' + str(post.get('style'))} · "
         f"{remaining} more approval(s) until MarketIt runs fully automatically</sub>",
         "",
         *(f"> {l}" if l else ">" for l in post["text"].splitlines()),
         "",
     ]
     if image_url:
-        lines += [f'<img src="{image_url}" width="320" alt="{post.get("alt_text", "")[:200]}">', ""]
+        imgs = [f'<img src="{image_url}" width="320" alt="ad">'] + [f'<img src="{u}" height="160" alt="project photo">' for u in extra_urls]
+        lines += [" ".join(imgs), ""]
     lines += [
         "Reply with one of:",
         f"- `approve {post['id']}`",
@@ -73,7 +74,8 @@ def request_pending_approvals(gh, state: dict, config: dict, items: dict[str, di
         if not issue:
             continue
         image_url = gh.file_url(f"data/{post['image']}") if post.get("image") else None
-        if gh.comment(issue, approval_comment(post, item, approvals_remaining(state, config), image_url)):
+        extra_urls = [gh.file_url(f"data/{e}") for e in post.get("extra_images") or []]
+        if gh.comment(issue, approval_comment(post, item, approvals_remaining(state, config), image_url, extra_urls)):
             post["approval_issue"] = issue
             save_queued(post)
             sent += 1

@@ -1,5 +1,13 @@
 # MarketIt — Final Plan
 
+> **Scope update:** MarketIt now promotes **LEGO Ideas projects only**.
+>
+> - Posts cover milestones (100 / 250 / 500 / 1K, then every 1K up to 10K) and countdowns (30 / 7 / 1 days left), plus regular progress posts.
+> - Every post includes the project's own photos from its LEGO Ideas page, shown uncropped and unaltered, and a link to support it.
+> - The ads are minimal designs (`marketit/images/ads.py`).
+>
+> AI-generated images and non-LEGO items were removed. The rest of this plan still describes the architecture.
+
 An automated, AI-driven system that markets anything you give it (products, services, apps, Lego Ideas projects, events, anything else) on social media. It costs nothing to run and needs almost no work from you.
 
 ## 1. How you use it

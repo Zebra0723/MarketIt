@@ -47,6 +47,7 @@ class Bluesky(Publisher):
     style_notes = "Conversational, punchy. Under 300 characters including the link."
     secrets = ("BLUESKY_HANDLE", "BLUESKY_APP_PASSWORD")
     max_image_bytes = 950_000
+    max_images = 4
 
     @property
     def service(self) -> str:
@@ -61,7 +62,7 @@ class Bluesky(Publisher):
         except http.HTTPError as exc:
             raise PublishError(f"Bluesky login failed: {exc}", permanent=exc.status in (400, 401)) from exc
 
-    def publish(self, post, image_path, image_url):
+    def publish(self, post, image_path, image_url, extra_paths=()):
         sess = self._session()
         auth = {"Authorization": f"Bearer {sess['accessJwt']}"}
         text = post["text"]
@@ -76,17 +77,18 @@ class Bluesky(Publisher):
             record["facets"] = facets
 
         if image_path:
-            blob = http.post(
-                f"{self.service}/xrpc/com.atproto.repo.uploadBlob",
-                data=image_path.read_bytes(),
-                headers={**auth, "Content-Type": "image/jpeg"},
-            ).json()["blob"]
-            with Image.open(image_path) as im:
-                w, h = im.size
-            record["embed"] = {
-                "$type": "app.bsky.embed.images",
-                "images": [{"alt": post.get("alt_text", "")[:1000], "image": blob, "aspectRatio": {"width": w, "height": h}}],
-            }
+            images = []
+            for i, path in enumerate([image_path, *extra_paths][:4]):
+                blob = http.post(
+                    f"{self.service}/xrpc/com.atproto.repo.uploadBlob",
+                    data=path.read_bytes(),
+                    headers={**auth, "Content-Type": "image/jpeg"},
+                ).json()["blob"]
+                with Image.open(path) as im:
+                    w, h = im.size
+                alt = post.get("alt_text", "") if i == 0 else f"Photo {i} of {post.get('title', 'the LEGO Ideas project')}"
+                images.append({"alt": alt[:1000], "image": blob, "aspectRatio": {"width": w, "height": h}})
+            record["embed"] = {"$type": "app.bsky.embed.images", "images": images}
         elif post.get("link"):
             record["embed"] = {
                 "$type": "app.bsky.embed.external",

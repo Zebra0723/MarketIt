@@ -7,13 +7,10 @@ import re
 from ..textutil import URL_RE
 
 FIELDS = {
+    "lego ideas link": "link",
     "link": "link",
     "notes": "notes",
-    "images": "image_mode",
-    "image mode": "image_mode",
-    "manual details": "manual",
 }
-IMAGE_MODES = ("auto", "link", "ai")
 
 
 def parse_issue_form(body: str) -> dict:
@@ -31,7 +28,7 @@ def parse_issue_form(body: str) -> dict:
     if current:
         sections[current] = "\n".join(lines).strip()
 
-    out = {"link": "", "notes": "", "image_mode": "auto", "manual": ""}
+    out = {"link": "", "notes": ""}
     for label, value in sections.items():
         if value == "_No response_":
             value = ""
@@ -39,9 +36,6 @@ def parse_issue_form(body: str) -> dict:
             if label.startswith(prefix):
                 out[key] = value
                 break
-
-    mode = out["image_mode"].lower().split()[0] if out["image_mode"] else "auto"
-    out["image_mode"] = mode if mode in IMAGE_MODES else "auto"
 
     if out["link"]:
         m = URL_RE.search(out["link"])
@@ -52,6 +46,4 @@ def parse_issue_form(body: str) -> dict:
         if m:
             out["link"] = m.group(0)
             out["notes"] = (body.replace(m.group(0), "")).strip()
-        else:
-            out["manual"] = (body or "").strip()
     return out

@@ -33,14 +33,10 @@ def test_fit_text_keeps_link():
 
 def test_issue_form_parsing():
     body = (
-        "### Link\n\nhttps://ideas.lego.com/projects/abc\n\n"
-        "### Notes\n\nPost at 1k supporters\n\n"
-        "### Images\n\nlink (use the photos from the link)\n\n"
-        "### Manual details\n\n_No response_"
+        "### LEGO Ideas link\n\nhttps://ideas.lego.com/projects/abc\n\n"
+        "### Notes\n\n_No response_"
     )
-    form = parse_issue_form(body)
-    assert form == {"link": "https://ideas.lego.com/projects/abc", "notes": "Post at 1k supporters",
-                    "image_mode": "link", "manual": ""}
+    assert parse_issue_form(body) == {"link": "https://ideas.lego.com/projects/abc", "notes": ""}
 
 
 def test_plain_issue_body_is_understood():
@@ -154,8 +150,84 @@ def test_planner_weekly_quota_and_fallback_channels(monkeypatch):
 
 
 def test_style_choice_exploits_winner():
-    state = {"style_scores": {"bluesky": {"humor": {"n": 5, "mean": 2.0}, "how_to": {"n": 5, "mean": 0.5}}}}
+    state = {"style_scores": {"bluesky": {"imagine": {"n": 5, "mean": 2.0}, "question": {"n": 5, "mean": 0.5}}}}
     rng = random.Random(1)
     picks = [learning.choose_style(state, "bluesky", rng, 0.0) for _ in range(10)]
-    assert set(picks) == {"humor"}
-    assert learning.choose_style(state, "bluesky", rng, 0.0, avoid="humor") == "how_to"
+    assert set(picks) == {"imagine"}
+    assert learning.choose_style(state, "bluesky", rng, 0.0, avoid="imagine") == "question"
+
+
+# LEGO Ideas -------------------------------------------------------------------------
+
+from marketit import legoideas  # noqa: E402
+from marketit.images import ads  # noqa: E402
+
+PROJECT = "https://ideas.lego.com/projects/a6b7e5c1-6d8e-4c1e-8a3b-2a1f1d0e9c11"
+
+
+def test_project_urls():
+    assert legoideas.is_project_url(PROJECT)
+    assert legoideas.is_project_url(PROJECT + "/updates")
+    assert not legoideas.is_project_url("https://ideas.lego.com/challenges/123")
+    assert not legoideas.is_project_url("https://example.com/projects/a6b7e5c1")
+    assert legoideas.canonical_url(PROJECT + "/comments?page=2") == PROJECT
+    assert legoideas.short_url(PROJECT) == "ideas.lego.com/projects/a6b7e5c1…"
+
+
+def test_parse_stats_from_page_text():
+    text = "Floating Castle\nCreated by\nBrickWizard42\n1,046\nSupporters\n214 days left\n"
+    assert legoideas.parse_stats(text) == {"supporters": 1046, "days_left": 214, "creator": "BrickWizard42"}
+    assert legoideas.parse_stats("nothing")["supporters"] is None
+
+
+def test_milestone_maths():
+    assert legoideas.next_milestone(None) == 100
+    assert legoideas.next_milestone(1046) == 2000
+    assert legoideas.next_milestone(12000) == 10000
+    assert legoideas.stage_progress(100) == 0.25
+    assert legoideas.stage_progress(5000) == 0.75
+    assert legoideas.stage_progress(20000) == 1.0
+
+
+def _marked_photo(size):
+    """A photo whose four corners have distinct colours, so cropping would be detectable."""
+    from PIL import Image, ImageDraw
+    im = Image.new("RGB", size, (128, 128, 128))
+    d = ImageDraw.Draw(im)
+    w, h = size
+    k = 40
+    for (x, y), c in zip([(0, 0), (w - k, 0), (0, h - k), (w - k, h - k)],
+                         [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]):
+        d.rectangle([x, y, x + k, y + k], fill=c)
+    return im
+
+
+def _find(ad, color):
+    px = ad.load()
+    return any(px[x, y] == color for x in range(0, ad.width, 2) for y in range(0, ad.height, 2))
+
+
+def test_ads_show_whole_uncropped_photos():
+    info = {"title": "Castle", "creator": "Bob", "supporters": 1046, "days_left": 9, "url": PROJECT}
+    for photo in (_marked_photo((1600, 900)), _marked_photo((900, 1600))):
+        for ad in (ads.milestone_ad([photo], info, 1000), ads.progress_ad([photo], info, "A castle"),
+                   ads.countdown_ad([photo], info, 7), ads.milestone_ad([photo], info, 1000, h=1620)):
+            assert ad.size[0] == 1080
+            for corner in [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]:
+                assert _find(ad, corner), f"corner {corner} cropped away"
+    gallery = ads.gallery_ad([_marked_photo((1600, 1200)), _marked_photo((1200, 900)), _marked_photo((800, 800))], info, "Hi")
+    for corner in [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]:
+        assert _find(gallery, corner)
+
+
+def test_ads_refuse_without_photos():
+    import pytest
+    with pytest.raises(ads.NoPhotosError):
+        ads.progress_ad([], {"title": "x", "url": PROJECT}, "x")
+
+
+def test_headline_balancing_avoids_orphans():
+    from PIL import Image, ImageDraw
+    draw = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    fnt, lines = ads.fit_headline(draw, "Three towers, one secret dragon lair", 920, start=60, minimum=42)
+    assert len(lines) == 2 and len(lines[1].split()) > 1

@@ -79,9 +79,7 @@ def web(isolated):
 def config():
     from marketit.config import load_config
 
-    cfg = load_config()
-    cfg["images"]["ai_provider"] = "none"
-    return cfg
+    return load_config()
 
 
 @pytest.fixture

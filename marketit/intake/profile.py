@@ -1,11 +1,11 @@
-"""Turn a link and/or manual details plus notes into a marketing profile, rules and watchers."""
+"""Turn a LEGO Ideas link plus notes into a marketing profile, rules and milestone watchers."""
 
 from __future__ import annotations
 
 import logging
 from dataclasses import asdict
 
-from .. import prompts
+from .. import legoideas, prompts
 from ..llm import ask_json
 from ..publishers import ALL, channel_guide, connected_channels
 from ..storage import iso, now
@@ -55,79 +55,87 @@ def normalize_watchers(raw, default_url: str | None) -> list[dict]:
     return out
 
 
-def normalize_profile(raw: dict, link: str | None, page: Page | None, manual_images: list[str]) -> tuple[dict, dict, list[dict], list[str]]:
-    kind = raw.get("kind") if raw.get("kind") in prompts.KINDS else "other"
-    images = list(manual_images)
-    if page:
-        images += [i for i in page.images if i not in images]
-    profile = {
-        "kind": kind,
-        "title": str(raw.get("title") or (page.title if page else "") or "Untitled")[:120],
-        "summary": str(raw.get("summary") or (page.description if page else ""))[:600],
-        "facts": [str(f) for f in raw.get("facts") or []][:15],
-        "benefits": [str(b) for b in raw.get("benefits") or []][:10],
-        "audience": str(raw.get("audience") or ""),
-        "tone": str(raw.get("tone") or "friendly"),
-        "hashtags": [str(h).lstrip("#").replace(" ", "") for h in raw.get("hashtags") or []][:10],
-        "price": raw.get("price") or (page.price if page else None),
-        "link": raw.get("link") if str(raw.get("link") or "").startswith("http") else link,
-        "images": images[:12],
-    }
-    channels = [c for c in dict.fromkeys(raw.get("channels") or []) if c in ALL] or list(ALL)
-    ppw = int(min(14, max(1, _num(raw.get("posts_per_week"), 3))))
-    strategy = {
-        "channels": channels,
-        "posts_per_week": ppw,
-        "rules": [str(r) for r in raw.get("rules") or []],
-        "end_date": raw.get("end_date") if raw.get("end_date") else None,
-    }
-    watchers = normalize_watchers(raw.get("watchers"), profile["link"] or link)
-    unsupported = [str(u) for u in raw.get("unsupported") or []]
-    return profile, strategy, watchers, unsupported
+def project_stats(page: Page | None, title_hint: str | None = None) -> dict:
+    stats = legoideas.parse_stats(page.text) if page else {"supporters": None, "days_left": None, "creator": None}
+    stats["next_goal"] = legoideas.next_milestone(stats["supporters"])
+    stats["updated_at"] = iso()
+    return stats
 
 
-def build_item(llm, config: dict, *, link: str | None, notes: str = "", manual: str = "",
-               image_mode: str = "auto", manual_images: list[str] | None = None,
-               source: dict | None = None, existing: dict | None = None) -> dict:
-    page = fetch_page(link) if link else None
-    page_dict = None
-    if page:
-        page_dict = asdict(page)
-        page_dict["images"] = page_dict["images"][:5]
+def lego_watchers(link: str, config: dict, extra_milestones: list) -> list[dict]:
+    lego = config.get("lego", {})
+    milestones = sorted({int(m) for m in lego.get("milestones", legoideas.DEFAULT_MILESTONES)}
+                        | {int(m) for m in extra_milestones if _num(m) and 0 < _num(m) <= 100000})
+    raw = legoideas.default_watchers(
+        link, milestones, lego.get("days_left_alerts", legoideas.DEFAULT_DAYS_LEFT_ALERTS),
+        float(lego.get("check_every_hours", 6)),
+    )
+    return normalize_watchers(raw, link)
+
+
+def build_item(llm, config: dict, *, link: str, notes: str = "", source: dict | None = None,
+               existing: dict | None = None) -> dict:
+    if not legoideas.is_project_url(link):
+        raise ValueError("MarketIt only works with LEGO Ideas project links, like https://ideas.lego.com/projects/…")
+    link = legoideas.canonical_url(link)
+    page = fetch_page(link)
+    stats = project_stats(page)
+    page_dict = asdict(page)
+    page_dict["images"] = page_dict["images"][:5]
     raw = ask_json(
         llm,
-        prompts.profile_prompt(link, page_dict, notes, manual, channel_guide(), connected_channels(config),
-                               now().date().isoformat(), image_mode),
+        prompts.profile_prompt(link, page_dict, stats, notes, channel_guide(), connected_channels(config),
+                               now().date().isoformat()),
         system=prompts.SYSTEM,
     )
-    profile, strategy, watchers, unsupported = normalize_profile(raw, link, page, manual_images or [])
 
-    item = existing or {
-        "id": None,
-        "status": "active",
-        "created_at": iso(),
-        "last_posted": {},
-        "post_count": 0,
+    hashtags = [str(h).lstrip("#").replace(" ", "") for h in raw.get("hashtags") or []]
+    for tag in ("LEGOIdeas", "LEGO"):
+        if tag.lower() not in {h.lower() for h in hashtags}:
+            hashtags.insert(0, tag)
+    profile = {
+        "kind": "lego_ideas_project",
+        "title": legoideas.clean_title(str(raw.get("title") or page.title))[:120],
+        "summary": str(raw.get("summary") or page.description)[:600],
+        "theme": str(raw.get("theme") or ""),
+        "facts": [str(f) for f in raw.get("facts") or []][:15],
+        "selling_points": [str(b) for b in raw.get("selling_points") or []][:10],
+        "audience": str(raw.get("audience") or "LEGO fans"),
+        "tone": str(raw.get("tone") or "enthusiastic"),
+        "hashtags": hashtags[:10],
+        "link": link,
+        "images": legoideas.project_images(page.images)[:12],
     }
+    if not stats.get("creator") and raw.get("creator"):
+        stats["creator"] = str(raw["creator"])[:40]
+
+    channels = [c for c in dict.fromkeys(raw.get("channels") or []) if c in ALL] or list(ALL)
+    strategy = {
+        "channels": channels,
+        "posts_per_week": int(min(14, max(1, _num(raw.get("posts_per_week"), config.get("lego", {}).get("posts_per_week", 3))))),
+        "rules": [str(r) for r in raw.get("rules") or []],
+        "end_date": raw.get("end_date") or None,
+    }
+    watchers = lego_watchers(link, config, raw.get("extra_milestones") or [])
+
+    item = existing or {"id": None, "status": "active", "created_at": iso(), "last_posted": {}, "post_count": 0}
     if existing:
-        # Keep progress on watchers the owner still wants (same page + metric).
+        # Keep progress (readings, milestones already celebrated) on watchers that still exist.
         old = {(w["url"], w["metric"].lower()): w for w in existing.get("watchers", [])}
         for w in watchers:
             prev = old.get((w["url"], w["metric"].lower()))
             if prev:
-                w.update(history=prev.get("history", []), fired=prev.get("fired", []),
-                         last_checked=prev.get("last_checked"))
+                w.update(history=prev.get("history", []), fired=prev.get("fired", []), last_checked=prev.get("last_checked"))
         if item.get("status") == "error":
             item["status"] = "active"
     item.update(
-        source=source or {"type": "link" if link else "manual", "link": link},
-        image_mode=image_mode,
+        source=source or {"type": "link", "link": link},
         notes=notes,
-        manual=manual,
         profile=profile,
+        project=stats,
         strategy=strategy,
         watchers=watchers,
-        unsupported=unsupported,
+        unsupported=[str(u) for u in raw.get("unsupported") or []],
     )
     if not item["id"]:
         prefix = f"{source['issue']}-" if source and source.get("issue") else ""

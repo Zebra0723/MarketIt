@@ -26,7 +26,7 @@ class Instagram(Publisher):
     def _api(self):
         return f"https://graph.facebook.com/{self.config['meta']['graph_version']}"
 
-    def publish(self, post, image_path, image_url):
+    def publish(self, post, image_path, image_url, extra_paths=()):
         if not image_url:
             raise PublishError("Instagram needs a public image URL (see media.public_base_url)", permanent=True)
         uid, token = env("INSTAGRAM_USER_ID"), env("INSTAGRAM_ACCESS_TOKEN")

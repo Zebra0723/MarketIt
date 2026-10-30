@@ -32,7 +32,7 @@ class Threads(Publisher):
                 raise PublishError(f"Threads rejected the post: {status.get('error_message')}", permanent=True)
             time.sleep(3)
 
-    def publish(self, post, image_path, image_url):
+    def publish(self, post, image_path, image_url, extra_paths=()):
         uid, token = env("THREADS_USER_ID"), env("THREADS_ACCESS_TOKEN")
         params = {"text": post["text"], "access_token": token}
         if image_url:

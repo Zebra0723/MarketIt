@@ -1,34 +1,21 @@
-name: 📣 Market something
-description: Give MarketIt a link (or details) and it will market it on social media automatically.
-title: "Market: "
+name: 🧱 Promote a LEGO Ideas project
+description: Paste a LEGO Ideas project link and MarketIt promotes it on social media automatically.
+title: "Promote: "
 labels: ["marketit-item"]
 body:
   - type: input
     id: link
     attributes:
-      label: Link
-      description: A product, service, app, Lego Ideas project, Kickstarter, video… anything. Leave empty to use manual details instead.
-      placeholder: https://
+      label: LEGO Ideas link
+      description: The project page, e.g. https://ideas.lego.com/projects/…
+      placeholder: https://ideas.lego.com/projects/
+    validations:
+      required: true
   - type: textarea
     id: notes
     attributes:
       label: Notes
       description: Optional instructions in plain English. The AI follows them.
       placeholder: |
-        e.g. Check this Lego Ideas project every day and make a special post when we hit 1k supporters, then 5k and 10k.
-        Aim at adult Lego fans. Don't mention the price. Stop after December 31.
-  - type: dropdown
-    id: image_mode
-    attributes:
-      label: Images
-      description: Where post images come from.
-      options:
-        - auto (AI decides)
-        - link (use the photos from the link)
-        - ai (AI-generated images)
-      default: 0
-  - type: textarea
-    id: manual
-    attributes:
-      label: Manual details
-      description: Only needed if there's no link (or the page doesn't say enough). Name, what it is, price, who it's for, where to get it, image URLs…
+        e.g. Aim at castle fans and adult LEGO collectors. Also celebrate 1,500 supporters.
+        Mention the working drawbridge. Post more often in the last month.

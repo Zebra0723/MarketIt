@@ -1,6 +1,6 @@
 """The scheduled run, in two stages so images are pushed before platforms fetch them:
 
-  prepare: refresh manual items, check watchers, write posts + images into data/queue/
+  prepare: refresh items, check milestones, write posts + ads into data/queue/
   (workflow commits and pushes)
   publish: post everything that's ready, ask for approvals, collect stats
 """
@@ -15,7 +15,7 @@ from .approvals import needs_approval, approvals_remaining, request_pending_appr
 from .config import env, redact
 from .generate import write_post
 from .github import GitHub
-from .images import prepare_post_image, prune_media
+from .images import prepare_post_images, prune_media
 from .intake import sync_manual_items
 from .learning import engagement, recompute_scores
 from .llm import get_llm
@@ -33,10 +33,8 @@ def _all_posts() -> list[dict]:
     return history_posts() + queued_posts()
 
 
-def _queue_post(item, post, publisher, config, rng, status):
-    post["image"] = prepare_post_image(item, post, publisher, config, rng)
-    if publisher.image_required and not post["image"]:
-        raise PublishError(f"{publisher.label} needs an image and none could be made")
+def _queue_post(item, post, publisher, status):
+    post["image"], post["extra_images"] = prepare_post_images(item, post, publisher)
     post["status"] = status
     save_queued(post)
     item["last_posted"][publisher.name] = iso()
@@ -66,12 +64,15 @@ def prepare(config: dict, llm=None, rng: random.Random | None = None) -> dict:
             continue
         events = check_item_watchers(llm, item, page_cache)
         for event in events:
+            if event["metric"] == "days left" and (item.get("project") or {}).get("supporters", 0) and \
+                    item["project"]["supporters"] >= 10000:
+                continue  # already in LEGO review; the deadline no longer matters
             for channel in item_channels(item, connected):
                 publisher = get_publisher(channel, config)
                 try:
                     post = write_post(llm, item, publisher, state, config, _all_posts(), rng, kind="milestone", milestone=event)
                     post["milestone"] = event
-                    _queue_post(item, post, publisher, config, rng, "ready")
+                    _queue_post(item, post, publisher, "ready")
                     summary["milestones"] += 1
                 except Exception as exc:
                     summary["errors"].append(f"{item['id']}/{channel} milestone: {redact(str(exc))}")
@@ -97,7 +98,7 @@ def prepare(config: dict, llm=None, rng: random.Random | None = None) -> dict:
         publisher = get_publisher(channel, config)
         try:
             post = write_post(llm, item, publisher, state, config, posts, rng)
-            _queue_post(item, post, publisher, config, rng, "awaiting_approval" if gated else "ready")
+            _queue_post(item, post, publisher, "awaiting_approval" if gated else "ready")
             save_item(item)
             mark_channel_used(state, channel, cap)
             summary["queued"] += 1
@@ -146,6 +147,7 @@ def publish_queue(config: dict, gh=None, dry_run: bool = False) -> dict:
             continue
         publisher = get_publisher(post["channel"], config)
         image_path = data_dir() / post["image"] if post.get("image") else None
+        extra_paths = [data_dir() / p for p in post.get("extra_images") or [] if (data_dir() / p).exists()]
         image_url = public_image_url(config, post.get("image"), gh) if publisher.needs_public_image_url else None
         if publisher.needs_public_image_url and post.get("image") and not image_url:
             if publisher.image_required:
@@ -153,9 +155,9 @@ def publish_queue(config: dict, gh=None, dry_run: bool = False) -> dict:
                 archive_post(post)
                 result["failed"].append(post)
                 continue
-            image_path = None  # e.g. Threads: fall back to a text post
+            image_path, extra_paths = None, []  # e.g. Threads: fall back to a text post
         try:
-            res = publisher.publish(post, image_path, image_url)
+            res = publisher.publish(post, image_path, image_url, extra_paths)
         except Exception as exc:
             post["attempts"] = post.get("attempts", 0) + 1
             post["last_error"] = redact(str(exc))[:500]
