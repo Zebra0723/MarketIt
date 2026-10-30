@@ -53,14 +53,27 @@ class Bluesky(Publisher):
     def service(self) -> str:
         return (env("BLUESKY_SERVICE") or "https://bsky.social").rstrip("/")
 
+    @staticmethod
+    def handle() -> str:
+        """Accept '@name.bsky.social', 'name.bsky.social' or a bsky.app profile link."""
+        h = (env("BLUESKY_HANDLE") or "").strip()
+        if "bsky.app/profile/" in h:
+            h = h.split("bsky.app/profile/", 1)[1].split("/")[0]
+        h = h.lstrip("@").strip()
+        if "." not in h and "@" not in h:
+            h += ".bsky.social"   # 'name' -> 'name.bsky.social'
+        return h
+
     def _session(self) -> dict:
         try:
             return http.post(
                 f"{self.service}/xrpc/com.atproto.server.createSession",
-                json={"identifier": env("BLUESKY_HANDLE"), "password": env("BLUESKY_APP_PASSWORD")},
+                json={"identifier": self.handle(), "password": env("BLUESKY_APP_PASSWORD").strip()},
             ).json()
         except http.HTTPError as exc:
-            raise PublishError(f"Bluesky login failed: {exc}", permanent=exc.status in (400, 401)) from exc
+            hint = (" Check BLUESKY_HANDLE (e.g. yourname.bsky.social) and that BLUESKY_APP_PASSWORD is an "
+                    "app password from Settings → Privacy and security → App passwords.")
+            raise PublishError(f"Bluesky login failed: {exc}.{hint}", permanent=exc.status in (400, 401)) from exc
 
     def publish(self, post, image_path, image_url, extra_paths=()):
         sess = self._session()

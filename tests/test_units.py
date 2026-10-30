@@ -352,3 +352,12 @@ def test_template_post_when_ai_is_down():
     m = write_post(ChainLLM([Down()]), item, bluesky, {}, config, [], random.Random(1), kind="milestone",
                    milestone={"metric": "supporters", "threshold": 250, "value": 251, "label": "250 supporters!"})
     assert "250 supporters" in m["text"]
+
+
+def test_bluesky_handle_is_normalised(monkeypatch):
+    from marketit.publishers.bluesky import Bluesky
+    for raw, want in [("@zebra.bsky.social", "zebra.bsky.social"), (" zebra.bsky.social ", "zebra.bsky.social"),
+                      ("https://bsky.app/profile/zebra.bsky.social", "zebra.bsky.social"), ("@zebra", "zebra.bsky.social"),
+                      ("me@example.com", "me@example.com")]:
+        monkeypatch.setenv("BLUESKY_HANDLE", raw)
+        assert Bluesky.handle() == want
