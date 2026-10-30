@@ -206,6 +206,9 @@ def refresh_project_stats(item: dict, page_cache: dict, llm=None) -> None:
     page = page_cache.get(url)
     if page is None:
         return
+    photos = legoideas.project_images(page.images, page.scripts)[:12]
+    if photos:
+        item["profile"]["images"] = photos   # pick up new or changed project photos
     fresh = page_cache.get(("stats", url)) or legoideas.read_stats(page, llm)
     stats = item.setdefault("project", {})
     for key, value in fresh.items():

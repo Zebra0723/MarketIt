@@ -22,7 +22,10 @@ STAGE_MEANING = {
     10000: "the goal: the project now goes to official LEGO review and could become a real set",
 }
 TITLE_SUFFIX_RE = re.compile(r"\s*[|\-–]\s*LEGO\s*Ideas.*$", re.I)
-SKIP_IMAGE_HINTS = ("avatar", "profile", "logo", "badge", "icon", "sprite", "placeholder", "favicon")
+SKIP_IMAGE_HINTS = ("avatar", "profile", "logo", "badge", "icon", "sprite", "placeholder", "favicon", "blank",
+                    "/build/images/")
+# Project photos live on the LEGO Ideas CDN: .../media/generate/lego_ci/<media id>/<variant>
+CDN_IMAGE_RE = re.compile(r"https:(?:\\?/){2}ideascdn\.lego\.com(?:\\?/)media(?:\\?/)generate(?:\\?/)lego_ci(?:\\?/)([0-9a-f-]{36})[^\"'\s<>)]*")
 
 
 def is_project_url(url: str | None) -> bool:
@@ -127,8 +130,29 @@ def clean_title(title: str) -> str:
     return TITLE_SUFFIX_RE.sub("", title or "").strip() or "LEGO Ideas project"
 
 
-def project_images(images: list[str]) -> list[str]:
-    return [i for i in images if not any(h in i.lower() for h in SKIP_IMAGE_HINTS)]
+def gallery_images(scripts: str) -> list[str]:
+    """Project gallery photos referenced in the page's data (one URL per photo, best variant)."""
+    best: dict[str, str] = {}
+    for m in CDN_IMAGE_RE.finditer(scripts or ""):
+        url = m.group(0).replace("\\/", "/").rstrip("\\")
+        media_id = m.group(1)
+        current = best.get(media_id)
+        if current is None or ("original" in url and "original" not in current):
+            best[media_id] = url
+    return list(best.values())
+
+
+def project_images(images: list[str], scripts: str = "") -> list[str]:
+    seen, out = set(), []
+    for url in list(images) + gallery_images(scripts):
+        if any(h in url.lower() for h in SKIP_IMAGE_HINTS):
+            continue
+        m = CDN_IMAGE_RE.match(url)
+        key = m.group(1) if m else url
+        if key not in seen:
+            seen.add(key)
+            out.append(url)
+    return out
 
 
 def next_milestone(supporters: int | None) -> int:
@@ -186,10 +210,10 @@ def read_stats(page, llm=None) -> dict:
                     if number is not None:
                         stats[key] = int(number)
                         stats["source"] = "AI"
-    if stats["supporters"] is None or stats["days_left"] is None:
-        guess = parse_stats(page.text)
-        for key in ("supporters", "days_left"):
-            if stats[key] is None and guess[key] is not None:
-                stats[key] = guess[key]
-                stats["source"] = "text guess"
+    if stats["days_left"] is None:
+        # "421 days left" is reliable to read from text; supporter counts are not (it read "1"
+        # off the real page), so those only ever come from page data or the AI.
+        guess = parse_stats(page.text)["days_left"]
+        if guess is not None:
+            stats["days_left"] = guess
     return stats

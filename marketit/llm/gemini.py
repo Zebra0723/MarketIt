@@ -130,11 +130,12 @@ class GeminiLLM(LLM):
         except GeminiBusy:
             resp = None
             for alt in self._alternatives(model):
-                log.warning("Gemini %s is overloaded; trying %s", model, alt)
+                log.warning("Gemini %s is unavailable; trying %s", model, alt)
                 try:
                     resp = self._generate(alt, body, patient=False)
                     break
-                except (GeminiBusy, http.HTTPError):
+                except (GeminiBusy, http.HTTPError) as exc:
+                    log.warning("Gemini %s also failed: %s", alt, str(exc)[:200])
                     continue
             if resp is None:
                 raise LLMError(f"Gemini is overloaded right now (tried {model} and alternatives); will retry later")

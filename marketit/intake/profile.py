@@ -106,7 +106,7 @@ def build_item(llm, config: dict, *, link: str, notes: str = "", source: dict | 
         "tone": str(raw.get("tone") or "enthusiastic"),
         "hashtags": hashtags[:10],
         "link": link,
-        "images": legoideas.project_images(page.images)[:12],
+        "images": legoideas.project_images(page.images, page.scripts)[:12],
     }
     if not stats.get("creator") and raw.get("creator"):
         stats["creator"] = str(raw["creator"])[:40]

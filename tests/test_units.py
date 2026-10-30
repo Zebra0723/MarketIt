@@ -313,3 +313,42 @@ def test_structured_stats_prefer_this_projects_data():
                '\\"expiresAt\\":\\"2099-01-01T00:00:00Z\\",\\"author\\":{\\"username\\":\\"BridgeBuilder\\"}}"])')
     stats = legoideas.parse_structured(scripts, pid)
     assert stats["supporters"] == 2481 and stats["creator"] == "BridgeBuilder" and stats["days_left"] > 1000
+
+
+def test_gallery_images_from_page_data_and_placeholders_skipped():
+    a, b = "2c024d6c-0327-446e-a47d-b02066e99583", "9f1e2d3c-1111-2222-3333-444455556666"
+    scripts = (f'"src":"https:\\/\\/ideascdn.lego.com\\/media\\/generate\\/lego_ci\\/{a}\\/thumb:300:300\\/webp",'
+               f'"full":"https:\\/\\/ideascdn.lego.com\\/media\\/generate\\/lego_ci\\/{a}\\/original:0:0\\/webp",'
+               f'"x":"https://ideascdn.lego.com/media/generate/lego_ci/{b}/original:0:0/webp"')
+    og = [f"https://ideascdn.lego.com/media/generate/lego_ci/{a}/original:0:0/webp",
+          "https://ideas.lego.com/build/images/blank-aev7vQVR.png"]
+    imgs = legoideas.project_images(og, scripts)
+    assert imgs == [og[0], f"https://ideascdn.lego.com/media/generate/lego_ci/{b}/original:0:0/webp"]
+
+
+def test_template_post_when_ai_is_down():
+    import random
+    from marketit.generate import write_post
+    from marketit.llm import ChainLLM, LLMError
+    from marketit.llm.base import LLM
+    from marketit.publishers import get_publisher
+    from marketit.config import load_config
+
+    class Down(LLM):
+        name = "down"
+        def complete(self, *a, **k):
+            raise LLMError("quota used up")
+
+    config = load_config()
+    item = {"id": "x", "notes": "", "strategy": {"rules": []},
+            "profile": {"title": "Golden Gate Bridge", "link": PROJECT, "summary": "A big bridge.",
+                        "facts": ["Almost 4,000 pieces"], "selling_points": ["An iconic landmark"],
+                        "hashtags": ["LEGOIdeas", "LEGO", "AFOL"]},
+            "project": {"supporters": 161, "days_left": 421, "next_goal": 250}}
+    bluesky = get_publisher("bluesky", config)
+    post = write_post(ChainLLM([Down()]), item, bluesky, {}, config, [], random.Random(1))
+    assert post["written_by"] == "template" and PROJECT in post["text"] and len(post["text"]) <= 300
+    assert "161" in post["text"]
+    m = write_post(ChainLLM([Down()]), item, bluesky, {}, config, [], random.Random(1), kind="milestone",
+                   milestone={"metric": "supporters", "threshold": 250, "value": 251, "label": "250 supporters!"})
+    assert "250 supporters" in m["text"]
