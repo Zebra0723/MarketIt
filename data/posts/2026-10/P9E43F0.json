@@ -15,11 +15,14 @@
   "extra_images": [
     "media/P9E43F0-1.jpg"
   ],
-  "status": "ready",
+  "status": "published",
   "created_at": "2026-10-30T17:33:27+00:00",
   "attempts": 0,
   "written_by": "ai",
   "template": "progress",
   "approval_issue": 1,
-  "approved_at": "2026-10-30T20:47:26+00:00"
+  "approved_at": "2026-10-30T20:47:26+00:00",
+  "published_at": "2026-10-30T21:17:04+00:00",
+  "platform_id": "at://did:plc:4bdfthcsz3oxjtssft7sfelz/app.bsky.feed.post/3mz4pcpvjzl2q",
+  "url": "https://bsky.app/profile/legoideas.bsky.social/post/3mz4pcpvjzl2q"
 }
