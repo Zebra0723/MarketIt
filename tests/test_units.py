@@ -236,3 +236,32 @@ def test_headline_balancing_avoids_orphans():
     draw = ImageDraw.Draw(Image.new("RGB", (10, 10)))
     fnt, lines = ads.fit_headline(draw, "Three towers, one secret dragon lair", 920, start=60, minimum=42)
     assert len(lines) == 2 and len(lines[1].split()) > 1
+
+
+def test_gemini_picks_newest_flash_model():
+    from marketit.llm.gemini import pick_model
+    gen = ["generateContent"]
+    models = [
+        {"name": "models/gemini-2.5-flash", "supportedGenerationMethods": gen},
+        {"name": "models/gemini-3.8-flash", "supportedGenerationMethods": gen},
+        {"name": "models/gemini-3.8-flash-lite", "supportedGenerationMethods": gen},
+        {"name": "models/gemini-3.9-flash-preview", "supportedGenerationMethods": gen},
+        {"name": "models/gemini-3.8-pro", "supportedGenerationMethods": gen},
+        {"name": "models/text-embedding-9", "supportedGenerationMethods": ["embedContent"]},
+    ]
+    assert pick_model(models) == "gemini-3.8-flash"
+
+
+def test_gemini_switches_model_when_retired(isolated, monkeypatch):
+    from .conftest import FakeResponse
+    from marketit.llm.gemini import GeminiLLM
+    monkeypatch.setenv("GEMINI_API_KEY", "k" * 20)
+    GeminiLLM._resolved.clear()
+    web = isolated
+    base = "https://generativelanguage.googleapis.com/v1beta/models"
+    web.on("POST", f"{base}/gemini-old:generateContent", FakeResponse(404, text="model retired"))
+    web.on("GET", base, {"models": [{"name": "models/gemini-9-flash", "supportedGenerationMethods": ["generateContent"]}]})
+    web.on("POST", f"{base}/gemini-9-flash:generateContent", {"candidates": [{"content": {"parts": [{"text": "hi"}]}}]})
+    assert GeminiLLM("gemini-old").complete("x") == "hi"
+    assert GeminiLLM("gemini-old").complete("y") == "hi"
+    assert len(web.calls_to(f"{base}/gemini-old")) == 1   # remembered, not retried

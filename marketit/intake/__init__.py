@@ -9,7 +9,7 @@ import yaml
 
 from .. import legoideas, prompts
 from ..config import ROOT, redact
-from ..llm import ask_json
+from ..llm import LLMError, ask_json
 from ..publishers import ALL, connected_channels
 from ..storage import all_items, find_item_by_issue, load_item, save_item
 from ..planner import item_channels
@@ -104,6 +104,8 @@ def intake_from_issue(llm, config: dict, issue: dict, gh=None) -> dict | None:
             source={"type": "link", "link": legoideas.canonical_url(form["link"]), "issue": issue["number"]},
             existing=existing,
         )
+    except LLMError:
+        raise  # an AI provider problem, not a problem with the issue: the caller retries later
     except Exception as exc:
         log.exception("intake failed")
         if gh:

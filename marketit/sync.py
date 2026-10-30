@@ -13,6 +13,7 @@ from datetime import timedelta
 from .approvals import handle_comment
 from . import legoideas
 from .intake import ITEM_LABEL, intake_from_issue
+from .config import redact
 from .llm import LLMError
 from .storage import find_item_by_issue, iso, load_state, now, parse_iso, save_item, save_state
 
@@ -77,7 +78,15 @@ def sync_issues(config: dict, llm_factory, gh, state: dict) -> int:
                            "automatically on the next run (or run **Actions → MarketIt run → Run workflow**).")
                 state["no_ai_warned"][str(issue["number"])] = digest
             continue  # retried automatically once a key is added
-        new = intake_from_issue(llm, config, issue, gh)
+        try:
+            new = intake_from_issue(llm, config, issue, gh)
+        except LLMError as exc:
+            warned = state.setdefault("ai_error_warned", {})
+            if warned.get(str(issue["number"])) != digest:
+                gh.comment(issue["number"], "⏳ Got it, but the AI service had a problem, so I'll retry automatically "
+                           f"on the next run (every 3 hours).\n\n<sub>{redact(str(exc))[:400]}</sub>")
+                warned[str(issue["number"])] = digest
+            continue
         failed.pop(str(issue["number"]), None)
         if new:
             new["source"]["issue_hash"] = digest

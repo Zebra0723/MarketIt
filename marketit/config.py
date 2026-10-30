@@ -14,7 +14,7 @@ DEFAULTS: dict = {
     "llm": {
         "providers": ["gemini", "groq", "ollama", "claude"],
         "models": {
-            "gemini": "gemini-2.5-flash",
+            "gemini": "gemini-3.8-flash",
             "groq": "llama-3.3-70b-versatile",
             "ollama": "llama3.1",
             "claude": "claude-opus-5-5",
