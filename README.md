@@ -117,14 +117,14 @@ Run `python -m marketit doctor` to see what's connected.
 
 ## The ads
 
-Every post has a designed ad: minimal, lots of white space, Inter typography, one accent colour. There are four layouts:
+Every post has an ad in the **style of a LEGO Ideas project page**: LEGO-yellow baseplate backdrop, a white project card, chunky rounded type (Fredoka and Nunito, free fonts), a green supporter bar with the 100 / 1K / 5K / 10K stages, and a big blue **Support on LEGO Ideas** button. It's always marked **"LEGO Ideas · Fan project"**. MarketIt doesn't use the LEGO logo or LEGO's own fonts: they're trademarked or proprietary, and using them could make the ad look official or put the project at risk.
 
 | Layout | Used for |
 |---|---|
-| **Milestone** | "1,000 supporters", with what the milestone means (e.g. "Extra time unlocked", "Headed to LEGO review") |
-| **Countdown** | "7 days left", plus the next supporter goal |
-| **Progress** | A headline about the build, live stats (supporters / to next goal / days left) |
-| **Gallery** | Three of the project's photos plus a headline |
+| **Milestone** | Red banner: "1,000 SUPPORTERS", with what it means (e.g. "Extra time unlocked", "Off to LEGO review!") |
+| **Countdown** | Red backdrop: "7 DAYS LEFT", plus the next supporter goal |
+| **Progress** | The project card with a headline about the build and live supporters / days left |
+| **Gallery** | The project card with three of the project's photos |
 
 Every ad shows progress toward 10,000 and ends with **"Support it on LEGO Ideas"** and the project link.
 
