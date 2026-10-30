@@ -286,6 +286,19 @@ def test_unlabelled_product_ideas_issue_is_picked_up_with_thumbs_up(web, monkeyp
     assert sum("GEMINI_API_KEY" in b for _, b in gh.comments) == 1
     assert all_items() == []
 
+    # AI overloaded: told once, and a question on the issue gets a status reply.
+    def busy():
+        class Busy:
+            def complete(self, *a, **k):
+                raise LLMError("Gemini is overloaded right now")
+        return Busy()
+    sync(config, busy, gh)
+    gh.issue_comments = [{"id": 9, "issue_url": "https://api.github.com/repos/me/marketit/issues/1",
+                          "body": "is it working now?", "author_association": "OWNER", "user": {"type": "User"}}]
+    sync(config, busy, gh)
+    assert "Not set up yet" in gh.comments[-1][1] and "overloaded" in gh.comments[-1][1]
+    gh.issue_comments = []
+
     # Key added: picked up automatically on the next run.
     sync(config, lambda: fake_llm, gh)
     [item] = all_items()

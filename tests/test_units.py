@@ -267,27 +267,27 @@ def test_gemini_switches_model_when_retired(isolated, monkeypatch):
     assert len(web.calls_to(f"{base}/gemini-old")) == 1   # remembered, not retried
 
 
-def test_gemini_low_thinking_timeout_retry_and_fallback(isolated, monkeypatch):
+def test_gemini_low_thinking_and_timeout_switches_model(isolated, monkeypatch):
     import requests
-    from .conftest import FakeResponse
     from marketit.llm.gemini import GeminiLLM, thinking_config
     assert thinking_config("gemini-3.8-flash") == {"thinkingLevel": "low"}
     assert thinking_config("gemini-2.5-flash") == {"thinkingBudget": 512}
     monkeypatch.setenv("GEMINI_API_KEY", "k" * 20)
     web = isolated
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
-    calls = {"n": 0}
+    base = "https://generativelanguage.googleapis.com/v1beta/models"
 
-    def flaky(u, kw):
-        calls["n"] += 1
+    def silent(u, kw):
         assert kw["json"]["generationConfig"]["thinkingConfig"] == {"thinkingLevel": "low"}
-        if calls["n"] == 1:
-            raise requests.Timeout("slow")
-        return {"candidates": [{"content": {"parts": [{"text": "t", "thought": True}, {"text": "ok"}]}}]}
+        raise requests.Timeout("slow")
 
-    web.on("POST", url, flaky)
+    web.on("POST", f"{base}/gemini-3.8-flash:generateContent", silent)
+    web.on("GET", base, {"models": [
+        {"name": "models/gemini-3.8-flash", "supportedGenerationMethods": ["generateContent"]},
+        {"name": "models/gemini-3.8-flash-lite", "supportedGenerationMethods": ["generateContent"]}]})
+    web.on("POST", f"{base}/gemini-3.8-flash-lite:generateContent",
+           {"candidates": [{"content": {"parts": [{"text": "t", "thought": True}, {"text": "ok"}]}}]})
     assert GeminiLLM("gemini-3.8-flash").complete("x", json_mode=True) == "ok"
-    assert calls["n"] == 2
+    assert len(web.calls_to(f"{base}/gemini-3.8-flash:")) == 1   # no second long wait
 
 
 def test_gemini_busy_retries_then_switches_model(isolated, monkeypatch):

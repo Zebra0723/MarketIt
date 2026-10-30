@@ -29,7 +29,7 @@ Rules you always follow:
 
 def profile_prompt(link: str, page: dict | None, stats: dict, notes: str, channels: str,
                    connected: list[str], today: str) -> str:
-    page_json = json.dumps(page, ensure_ascii=False)[:14000] if page else "null"
+    page_json = json.dumps(page, ensure_ascii=False)[:8000] if page else "null"
     return f"""TASK: profile
 Today is {today}. The owner wants this LEGO Ideas project promoted on social media automatically.
 

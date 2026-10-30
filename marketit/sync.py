@@ -82,12 +82,14 @@ def sync_issues(config: dict, llm_factory, gh, state: dict) -> int:
             new = intake_from_issue(llm, config, issue, gh)
         except LLMError as exc:
             warned = state.setdefault("ai_error_warned", {})
+            state.setdefault("pending_reason", {})[str(issue["number"])] = redact(str(exc))[:300]
             if warned.get(str(issue["number"])) != digest:
                 gh.comment(issue["number"], "⏳ Got it, but the AI service had a problem, so I'll retry automatically "
                            f"on the next run (within the hour).\n\n<sub>{redact(str(exc))[:400]}</sub>")
                 warned[str(issue["number"])] = digest
             continue
         failed.pop(str(issue["number"]), None)
+        state.get("pending_reason", {}).pop(str(issue["number"]), None)
         if new:
             new["source"]["issue_hash"] = digest
             if new["status"] == "ended":
@@ -119,6 +121,13 @@ def sync_comments(config: dict, llm_factory, gh, state: dict) -> int:
             continue
         number = int(c["issue_url"].rsplit("/", 1)[-1])
         if number != approvals_issue and not find_item_by_issue(number):
+            reason = state.get("pending_reason", {}).get(str(number))
+            if reason:
+                gh.comment(number, "⏳ Not set up yet: the last attempt failed because the AI service had a problem, "
+                           "so I'm retrying every hour.\n\n"
+                           f"<sub>Last error: {reason}</sub>\n\n"
+                           "Tip: adding a free `GROQ_API_KEY` secret gives me a backup AI for times like this.")
+                handled += 1
             continue
         save_state(state)  # handle_comment loads/saves state itself
         handle_comment(llm_factory, config, number, c.get("body", ""), gh, {})

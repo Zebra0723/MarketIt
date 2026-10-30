@@ -82,6 +82,7 @@ def build_item(llm, config: dict, *, link: str, notes: str = "", source: dict | 
     stats = project_stats(page)
     page_dict = asdict(page)
     page_dict["images"] = page_dict["images"][:5]
+    page_dict["text"] = page_dict["text"][:6000]   # plenty for a profile; keeps the AI fast
     raw = ask_json(
         llm,
         prompts.profile_prompt(link, page_dict, stats, notes, channel_guide(), connected_channels(config),

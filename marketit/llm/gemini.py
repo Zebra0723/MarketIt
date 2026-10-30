@@ -41,7 +41,7 @@ def pick_model(models: list[dict]) -> str | None:
     return ranked[0] if ranked else None
 
 
-TIMEOUT = 240
+TIMEOUT = 90       # a healthy reply takes seconds; silence this long means the model is struggling
 BUSY_WAITS = (5, 15, 30)   # seconds to wait before retrying "overloaded" (429/500/503) replies
 
 
@@ -86,7 +86,7 @@ class GeminiLLM(LLM):
             return []
         return [m for m in ranked_models(resp.get("models", []), allow_lite=True) if m != current][:2]
 
-    def _generate(self, model: str, body: dict) -> dict:
+    def _generate(self, model: str, body: dict, patient: bool = True) -> dict:
         body = dict(body)
         config = dict(body.get("generationConfig", {}))
         if model not in self._no_thinking_config:
@@ -94,18 +94,16 @@ class GeminiLLM(LLM):
         if config:
             body["generationConfig"] = config
         url = f"{BASE}/models/{model}:generateContent"
-        timeouts, busy = 0, 0
+        busy = 0
         while True:
             try:
                 return http.post(url, json=body, headers=self._headers(), timeout=TIMEOUT).json()
-            except requests.Timeout:
-                timeouts += 1
-                if timeouts == 2:
-                    raise LLMError(f"Gemini ({model}) took longer than {TIMEOUT}s twice")
-                log.warning("Gemini timed out; retrying once")
+            except requests.Timeout as exc:
+                log.warning("Gemini %s gave no answer within %ss", model, TIMEOUT)
+                raise GeminiBusy(model) from exc
             except http.HTTPError as exc:
                 if exc.status in (429, 500, 503):
-                    if busy < len(BUSY_WAITS):
+                    if patient and busy < len(BUSY_WAITS):
                         log.warning("Gemini %s is busy (%s); retrying in %ss", model, exc.status, BUSY_WAITS[busy])
                         time.sleep(BUSY_WAITS[busy])
                         busy += 1
@@ -134,7 +132,7 @@ class GeminiLLM(LLM):
             for alt in self._alternatives(model):
                 log.warning("Gemini %s is overloaded; trying %s", model, alt)
                 try:
-                    resp = self._generate(alt, body)
+                    resp = self._generate(alt, body, patient=False)
                     break
                 except (GeminiBusy, http.HTTPError):
                     continue
