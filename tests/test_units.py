@@ -288,3 +288,19 @@ def test_gemini_low_thinking_timeout_retry_and_fallback(isolated, monkeypatch):
     web.on("POST", url, flaky)
     assert GeminiLLM("gemini-3.8-flash").complete("x", json_mode=True) == "ok"
     assert calls["n"] == 2
+
+
+def test_gemini_busy_retries_then_switches_model(isolated, monkeypatch):
+    from .conftest import FakeResponse
+    from marketit.llm import gemini
+    monkeypatch.setenv("GEMINI_API_KEY", "k" * 20)
+    monkeypatch.setattr(gemini.time, "sleep", lambda s: None)
+    web = isolated
+    base = "https://generativelanguage.googleapis.com/v1beta/models"
+    web.on("POST", f"{base}/gemini-3.8-flash:generateContent", FakeResponse(503, text="high demand"))
+    web.on("GET", base, {"models": [
+        {"name": "models/gemini-3.8-flash", "supportedGenerationMethods": ["generateContent"]},
+        {"name": "models/gemini-3.8-flash-lite", "supportedGenerationMethods": ["generateContent"]}]})
+    web.on("POST", f"{base}/gemini-3.8-flash-lite:generateContent", {"candidates": [{"content": {"parts": [{"text": "ok"}]}}]})
+    assert gemini.GeminiLLM("gemini-3.8-flash").complete("x") == "ok"
+    assert len(web.calls_to(f"{base}/gemini-3.8-flash:")) == 4   # 1 try + 3 retries

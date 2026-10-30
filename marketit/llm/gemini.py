@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 
 import requests
 
@@ -20,21 +21,28 @@ BASE = "https://generativelanguage.googleapis.com/v1beta"
 SKIP = ("lite", "image", "tts", "audio", "live", "embedding", "exp", "preview", "thinking", "vision")
 
 
-def pick_model(models: list[dict]) -> str | None:
-    """Newest general-purpose 'flash' model that supports generateContent."""
+def ranked_models(models: list[dict], allow_lite: bool = False) -> list[str]:
+    """General-purpose 'flash' models that support generateContent, newest first."""
+    skip = tuple(s for s in SKIP if not (allow_lite and s == "lite"))
     candidates = []
     for m in models:
         name = m.get("name", "").removeprefix("models/")
         if "generateContent" not in m.get("supportedGenerationMethods", []):
             continue
-        if "flash" not in name or any(s in name for s in SKIP):
+        if "flash" not in name or any(s in name for s in skip):
             continue
         version = tuple(int(x) for x in re.findall(r"\d+", name.split("flash")[0])) or (0,)
-        candidates.append((version, "latest" not in name, name))
-    return max(candidates)[2] if candidates else None
+        candidates.append((version, "lite" not in name, "latest" not in name, name))
+    return [c[-1] for c in sorted(candidates, reverse=True)]
+
+
+def pick_model(models: list[dict]) -> str | None:
+    ranked = ranked_models(models)
+    return ranked[0] if ranked else None
 
 
 TIMEOUT = 240
+BUSY_WAITS = (5, 15, 30)   # seconds to wait before retrying "overloaded" (429/500/503) replies
 
 
 def thinking_config(model: str) -> dict:
@@ -44,6 +52,12 @@ def thinking_config(model: str) -> dict:
     if major and int(major.group(1)) >= 3:
         return {"thinkingLevel": "low"}
     return {"thinkingBudget": 512}
+
+
+class GeminiBusy(LLMError):
+    def __init__(self, model: str):
+        super().__init__(f"Gemini ({model}) is overloaded right now")
+        self.model = model
 
 
 class GeminiLLM(LLM):
@@ -65,6 +79,13 @@ class GeminiLLM(LLM):
             raise LLMError("Gemini: no usable model found for this API key")
         return model
 
+    def _alternatives(self, current: str) -> list[str]:
+        try:
+            resp = http.get(f"{BASE}/models", params={"pageSize": 200}, headers=self._headers()).json()
+        except Exception:
+            return []
+        return [m for m in ranked_models(resp.get("models", []), allow_lite=True) if m != current][:2]
+
     def _generate(self, model: str, body: dict) -> dict:
         body = dict(body)
         config = dict(body.get("generationConfig", {}))
@@ -73,14 +94,23 @@ class GeminiLLM(LLM):
         if config:
             body["generationConfig"] = config
         url = f"{BASE}/models/{model}:generateContent"
-        for attempt in (1, 2):
+        timeouts, busy = 0, 0
+        while True:
             try:
                 return http.post(url, json=body, headers=self._headers(), timeout=TIMEOUT).json()
             except requests.Timeout:
-                if attempt == 2:
+                timeouts += 1
+                if timeouts == 2:
                     raise LLMError(f"Gemini ({model}) took longer than {TIMEOUT}s twice")
                 log.warning("Gemini timed out; retrying once")
             except http.HTTPError as exc:
+                if exc.status in (429, 500, 503):
+                    if busy < len(BUSY_WAITS):
+                        log.warning("Gemini %s is busy (%s); retrying in %ss", model, exc.status, BUSY_WAITS[busy])
+                        time.sleep(BUSY_WAITS[busy])
+                        busy += 1
+                        continue
+                    raise GeminiBusy(model) from exc
                 if exc.status == 400 and "thinking" in str(exc).lower() and "thinkingConfig" in config:
                     # This model doesn't accept the thinking setting: send without it.
                     self._no_thinking_config.add(model)
@@ -99,6 +129,17 @@ class GeminiLLM(LLM):
         model = self._resolved.get(configured, configured)
         try:
             resp = self._generate(model, body)
+        except GeminiBusy:
+            resp = None
+            for alt in self._alternatives(model):
+                log.warning("Gemini %s is overloaded; trying %s", model, alt)
+                try:
+                    resp = self._generate(alt, body)
+                    break
+                except (GeminiBusy, http.HTTPError):
+                    continue
+            if resp is None:
+                raise LLMError(f"Gemini is overloaded right now (tried {model} and alternatives); will retry later")
         except http.HTTPError as exc:
             if exc.status != 404:
                 raise

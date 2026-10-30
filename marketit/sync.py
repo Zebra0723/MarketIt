@@ -84,7 +84,7 @@ def sync_issues(config: dict, llm_factory, gh, state: dict) -> int:
             warned = state.setdefault("ai_error_warned", {})
             if warned.get(str(issue["number"])) != digest:
                 gh.comment(issue["number"], "⏳ Got it, but the AI service had a problem, so I'll retry automatically "
-                           f"on the next run (every 3 hours).\n\n<sub>{redact(str(exc))[:400]}</sub>")
+                           f"on the next run (within the hour).\n\n<sub>{redact(str(exc))[:400]}</sub>")
                 warned[str(issue["number"])] = digest
             continue
         failed.pop(str(issue["number"]), None)

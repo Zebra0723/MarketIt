@@ -2,7 +2,7 @@ name: MarketIt run
 
 on:
   schedule:
-    - cron: "17 */3 * * *"   # every 3 hours; MarketIt decides what is actually due
+    - cron: "17 * * * *"   # hourly; MarketIt decides what is actually due
   workflow_dispatch:
 
 permissions:

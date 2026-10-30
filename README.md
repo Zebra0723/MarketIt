@@ -61,7 +61,7 @@ After 5 approvals MarketIt runs on its own. Milestone posts from watchers never 
 
 ## Day to day
 
-MarketIt runs every 3 hours. On each run it:
+MarketIt runs every hour. On each run it:
 1. Checks watchers.
 2. Decides which channels are due to post.
 3. Picks the item that has waited longest for each due channel.
@@ -221,7 +221,7 @@ pip install pytest && python -m pytest
 
 ## Costs and limits
 
-- **GitHub Actions:** free for public repos. Private repos get 2,000 free minutes a month, and a run takes about 2–3 minutes. Running every 3 hours uses roughly 500–700 minutes a month.
+- **GitHub Actions:** free for public repos. Private repos get 2,000 free minutes a month, and a run takes about 2–3 minutes. Running every hour uses roughly 500–700 minutes a month.
 - **Free AI tiers** have daily limits. MarketIt uses about 1–2 AI calls per post, which is well within them for normal use.
 - **Scheduled workflows in public repos** are paused by GitHub after 60 days with no repo activity. MarketIt's own commits count as activity.
 
