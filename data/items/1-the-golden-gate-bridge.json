@@ -45,16 +45,24 @@
     "link": "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5",
     "images": [
       "https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e99583/original:0:0/webp",
-      "https://ideas.lego.com/build/images/blank-aev7vQVR.png"
+      "https://ideascdn.lego.com/media/generate/lego_ci/2fea4081-6e1a-4ab2-9f2a-d73c9b5cf9c8/original:0:0/webp",
+      "https://ideascdn.lego.com/media/generate/lego_ci/feec9f7b-5f72-4cd2-96b1-cc7a5d132d76/original:0:0/webp",
+      "https://ideascdn.lego.com/media/generate/lego_ci/b860e767-58cf-4ae1-8e8e-2ff79aeff0b2/original:0:0/webp",
+      "https://ideascdn.lego.com/media/generate/lego_ci/8b6ea5fb-7fa8-4cf4-a852-7d6007648fca/original:0:0/webp",
+      "https://ideascdn.lego.com/media/generate/lego_ci/bd9cc74b-1a44-4c72-b61f-88c6881cd29e/original:0:0/webp",
+      "https://ideascdn.lego.com/media/generate/lego_ci/b8cae56e-5f88-4099-a272-f73e36735c34/original:0:0/webp",
+      "https://ideascdn.lego.com/media/generate/lego_ci/e000683b-4111-4a06-92ba-fe96a6131c1f/original:0:0/webp",
+      "https://ideascdn.lego.com/media/generate/lego_ci/b823fcd2-b45c-4abf-a93a-051b12ebcbe1/original:0:0/webp",
+      "https://ideascdn.lego.com/media/generate/lego_ci/06adc1ae-3dc3-4194-942d-8710b276518e/original:0:0/webp"
     ]
   },
   "project": {
-    "supporters": 161,
-    "days_left": 421,
+    "supporters": 166,
+    "days_left": 420,
     "creator": "ZEBRASARECOOL",
     "source": "AI",
     "next_goal": 250,
-    "updated_at": "2026-10-30T17:19:23+00:00"
+    "updated_at": "2026-10-31T01:39:25+00:00"
   },
   "strategy": {
     "channels": [
@@ -160,6 +168,10 @@
         {
           "t": "2026-10-30T17:19:23+00:00",
           "v": 161.0
+        },
+        {
+          "t": "2026-10-31T01:39:25+00:00",
+          "v": 166.0
         }
       ],
       "fired": [
@@ -170,7 +182,7 @@
           "silent": true
         }
       ],
-      "last_checked": "2026-10-30T17:17:48+00:00",
+      "last_checked": "2026-10-31T01:38:28+00:00",
       "last_error": null
     },
     {
@@ -202,13 +214,17 @@
         {
           "t": "2026-10-30T17:19:23+00:00",
           "v": 421.0
+        },
+        {
+          "t": "2026-10-31T01:39:25+00:00",
+          "v": 420.0
         }
       ],
       "fired": [],
-      "last_checked": "2026-10-30T17:19:23+00:00",
+      "last_checked": "2026-10-31T01:39:25+00:00",
       "last_error": null
     }
   ],
   "unsupported": [],
-  "updated_at": "2026-10-30T21:34:08+00:00"
+  "updated_at": "2026-10-31T01:39:25+00:00"
 }

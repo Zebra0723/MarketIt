@@ -1,10 +1,10 @@
 # Snapshot of https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5
-read at 2026-10-30T17:19:23+00:00
+read at 2026-10-31T01:39:25+00:00
 
 title: The Golden Gate Bridge | LEGO® Ideas
 description: This is the Golden Gate Bridge - an iconic landmark in the sunny state of California. This model, almost 4000 pieces, is my LEGO representation of such an amazi…
 
-stats used: {'supporters': 161, 'days_left': 421, 'creator': 'ZEBRASARECOOL', 'source': 'AI', 'next_goal': 250, 'updated_at': '2026-10-30T17:15:14+00:00'}
+stats used: {'supporters': 166, 'days_left': 420, 'creator': 'ZEBRASARECOOL', 'source': 'AI', 'next_goal': 250, 'updated_at': '2026-10-30T17:19:23+00:00'}
 
 ## images
 https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e99583/original:0:0/webp
@@ -39,16 +39,16 @@ https://ideas.lego.com/build/images/blank-aev7vQVR.png
 "day_one":"day","day_other":"days","follower_one":"follower","follower_other":"followers","following":"following","year_
 "day_other":"days","follower_one":"follower","follower_other":"followers","following":"following","year_one":"year","yea
 "userConfig":null},"meta":{"metaTitle":"The Golden Gate Bridge","metaDescription":"This is the Golden Gate Bridge - an i
-"achievedSupport":false,"canCreateComment":false,"canEdit":false,"commentsCount":52,"creatorAlias":"ZEBRASARECOOL","crea
+"achievedSupport":false,"canCreateComment":false,"canEdit":false,"commentsCount":53,"creatorAlias":"ZEBRASARECOOL","crea
 "creatorAlias":"ZEBRASARECOOL","creatorAvatarUrl":"https://ideascdn.lego.com/media/generate/entity/lego_ci/user/5430698e
 "creatorAvatarUrl":"https://ideascdn.lego.com/media/generate/entity/lego_ci/user/5430698e-0001-4d4c-b185-6303eef85f38/4/
-"creatorGroups":[],"creatorUpdatesCount":2,"creatorUuid":"5430698e-0001-4d4c-b185-6303eef85f38","description":"\u003cp\u
-"creatorUpdatesCount":2,"creatorUuid":"5430698e-0001-4d4c-b185-6303eef85f38","description":"\u003cp\u003eThis is the Gol
+"creatorGroups":[],"creatorUpdatesCount":3,"creatorUuid":"5430698e-0001-4d4c-b185-6303eef85f38","description":"\u003cp\u
+"creatorUpdatesCount":3,"creatorUuid":"5430698e-0001-4d4c-b185-6303eef85f38","description":"\u003cp\u003eThis is the Gol
 "creatorUuid":"5430698e-0001-4d4c-b185-6303eef85f38","description":"\u003cp\u003eThis is the Golden Gate Bridge - an ico
 "hasSupported":false,"images":[{"url":"https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e9
 "isCreator":false,"isDraft":false,"isFeatured":false,"isGatheringSupport":true,"isSaved":false,"officialCommentsCount":1
 "isGatheringSupport":true,"isSaved":false,"officialCommentsCount":1,"publishedAt":"2026-10-26T11:27:05.445219Z","shareUr
-"supportCount":161,"supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Gold
+"supportCount":166,"supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Gold
 "supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Golden Gate Bridge! Be 
 "supporterMessage":"Thank you for supporting the Golden Gate Bridge! Be sure to tell your friends to support too.","tags
 
@@ -78,11 +78,11 @@ Thank you for supporting
 1
 6
 6
-1
-1
+6
+6
 supporters
 See timeline
-421
+420
 days left to get 1K supporters
 Creator
 :
@@ -104,11 +104,11 @@ Thank you for supporting
 1
 6
 6
-1
-1
+6
+6
 supporters
 See timeline
-421
+420
 days left to get 1K supporters
 Creator
 :
@@ -121,14 +121,14 @@ Bookmark
 Report
 Description
 Comments
-52
+53
 Creator updates
 New
 LEGO updates
 1
 Description
 Comments
-52
+53
 Creator updates
 New
 LEGO updates
@@ -159,19 +159,19 @@ Lego Prague Through the Seasons
 832
 32
 360 days
+WrapFull7888
+The Big Manor
+321
+33
+318 days
 Microcity_Builder
 Calgary Skyline
-216
+217
 28
-383 days
-GeneralPankek240
-Lego 'Galata Tower '
-230
-36
-351 days
+382 days
 WizardHonorableNoodle240
 Golden Gate Bridge (San Francisco)
 270
 30
-354 days
+353 days
 Notifications
