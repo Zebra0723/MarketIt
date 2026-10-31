@@ -24,5 +24,12 @@
   "approved_at": "2026-10-30T20:47:26+00:00",
   "published_at": "2026-10-30T21:17:04+00:00",
   "platform_id": "at://did:plc:4bdfthcsz3oxjtssft7sfelz/app.bsky.feed.post/3mz4pcpvjzl2q",
-  "url": "https://bsky.app/profile/legoideas.bsky.social/post/3mz4pcpvjzl2q"
+  "url": "https://bsky.app/profile/legoideas.bsky.social/post/3mz4pcpvjzl2q",
+  "metrics": {
+    "likes": 1,
+    "reposts": 0,
+    "replies": 0
+  },
+  "engagement": 1,
+  "metrics_at": "2026-10-31T15:29:28+00:00"
 }
