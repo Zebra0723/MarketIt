@@ -7,9 +7,18 @@
       "next_at": "2026-11-01T20:13:04+00:00"
     }
   },
-  "style_scores": {},
-  "best_hours": {},
-  "last_stats_at": "2026-10-31T15:29:28+00:00",
+  "style_scores": {
+    "bluesky": {
+      "feature_spotlight": {
+        "n": 1,
+        "mean": 0.5
+      }
+    }
+  },
+  "best_hours": {
+    "bluesky": []
+  },
+  "last_stats_at": "2026-11-01T13:43:07+00:00",
   "approvals_issue": null,
   "issues_synced_at": "2026-11-01T13:38:11+00:00",
   "processed_comments": [
