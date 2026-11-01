@@ -1,10 +1,10 @@
 # Snapshot of https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5
-read at 2026-11-01T06:19:58+00:00
+read at 2026-11-01T13:41:21+00:00
 
 title: The Golden Gate Bridge | LEGO® Ideas
 description: This is the Golden Gate Bridge - an iconic landmark in the sunny state of California. This model, almost 4000 pieces, is my LEGO representation of such an amazi…
 
-stats used: {'supporters': 182, 'days_left': 419, 'creator': 'ZEBRASARECOOL', 'source': 'AI', 'next_goal': 250, 'updated_at': '2026-10-31T23:27:40+00:00'}
+stats used: {'supporters': 183, 'days_left': 419, 'creator': 'ZEBRASARECOOL', 'source': 'AI', 'next_goal': 250, 'updated_at': '2026-11-01T06:19:58+00:00'}
 
 ## images
 https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e99583/original:0:0/webp
@@ -48,7 +48,7 @@ https://ideas.lego.com/build/images/blank-aev7vQVR.png
 "hasSupported":false,"images":[{"url":"https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e9
 "isCreator":false,"isDraft":false,"isFeatured":false,"isGatheringSupport":true,"isSaved":false,"officialCommentsCount":1
 "isGatheringSupport":true,"isSaved":false,"officialCommentsCount":1,"publishedAt":"2026-10-26T11:27:05.445219Z","shareUr
-"supportCount":182,"supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Gold
+"supportCount":183,"supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Gold
 "supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Golden Gate Bridge! Be 
 "supporterMessage":"Thank you for supporting the Golden Gate Bridge! Be sure to tell your friends to support too.","tags
 
@@ -78,8 +78,8 @@ Thank you for supporting
 1
 8
 8
-2
-2
+3
+3
 supporters
 See timeline
 419
@@ -104,8 +104,8 @@ Thank you for supporting
 1
 8
 8
-2
-2
+3
+3
 supporters
 See timeline
 419
@@ -154,24 +154,24 @@ We ask fans to sign in because it’s safer and creates a better experience for 
 Create a LEGO Account
 Sign in
 Related product ideas
-WizardHonorableNoodle240
-Golden Gate Bridge (San Francisco)
-271
-30
-352 days
 Dark Lord of Bricks
 Lego Prague Through the Seasons
-835
+836
 32
-359 days
+358 days
 Microcity_Builder
 Calgary Skyline
 217
 28
 381 days
+WizardHonorableNoodle240
+Golden Gate Bridge (San Francisco)
+271
+30
+352 days
 GeneralPankek240
 Lego 'Galata Tower '
-232
+233
 36
 349 days
 Notifications

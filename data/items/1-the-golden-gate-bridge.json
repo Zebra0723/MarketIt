@@ -3,9 +3,9 @@
   "status": "active",
   "created_at": "2026-10-30T17:16:03+00:00",
   "last_posted": {
-    "bluesky": "2026-10-31T15:29:25+00:00"
+    "bluesky": "2026-11-01T13:43:04+00:00"
   },
-  "post_count": 2,
+  "post_count": 3,
   "source": {
     "type": "link",
     "link": "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5",
@@ -57,12 +57,12 @@
     ]
   },
   "project": {
-    "supporters": 182,
+    "supporters": 183,
     "days_left": 419,
     "creator": "ZEBRASARECOOL",
     "source": "AI",
     "next_goal": 250,
-    "updated_at": "2026-11-01T06:19:58+00:00"
+    "updated_at": "2026-11-01T13:41:21+00:00"
   },
   "strategy": {
     "channels": [
@@ -188,6 +188,10 @@
         {
           "t": "2026-11-01T06:19:58+00:00",
           "v": 182.0
+        },
+        {
+          "t": "2026-11-01T13:41:21+00:00",
+          "v": 183.0
         }
       ],
       "fired": [
@@ -198,7 +202,7 @@
           "silent": true
         }
       ],
-      "last_checked": "2026-11-01T06:16:52+00:00",
+      "last_checked": "2026-11-01T13:38:12+00:00",
       "last_error": null
     },
     {
@@ -250,13 +254,17 @@
         {
           "t": "2026-11-01T06:19:58+00:00",
           "v": 419.0
+        },
+        {
+          "t": "2026-11-01T13:41:21+00:00",
+          "v": 419.0
         }
       ],
       "fired": [],
-      "last_checked": "2026-11-01T06:19:58+00:00",
+      "last_checked": "2026-11-01T13:41:21+00:00",
       "last_error": null
     }
   ],
   "unsupported": [],
-  "updated_at": "2026-11-01T06:19:58+00:00"
+  "updated_at": "2026-11-01T13:43:04+00:00"
 }
