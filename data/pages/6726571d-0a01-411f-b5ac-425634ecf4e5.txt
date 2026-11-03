@@ -1,10 +1,10 @@
 # Snapshot of https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5
-read at 2026-11-03T03:31:28+00:00
+read at 2026-11-03T12:01:04+00:00
 
 title: The Golden Gate Bridge | LEGO® Ideas
 description: This is the Golden Gate Bridge - an iconic landmark in the sunny state of California. This model, almost 4000 pieces, is my LEGO representation of such an amazi…
 
-stats used: {'supporters': 202, 'days_left': 417, 'creator': 'ZEBRASARECOOL', 'source': 'AI', 'next_goal': 250, 'updated_at': '2026-11-02T21:48:52+00:00'}
+stats used: {'supporters': 204, 'days_left': 417, 'creator': 'ZEBRASARECOOL', 'source': 'AI', 'next_goal': 250, 'updated_at': '2026-11-03T03:31:28+00:00'}
 
 ## images
 https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e99583/original:0:0/webp
@@ -48,7 +48,7 @@ https://ideas.lego.com/build/images/blank-aev7vQVR.png
 "hasSupported":false,"images":[{"url":"https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e9
 "isCreator":false,"isDraft":false,"isFeatured":false,"isGatheringSupport":true,"isSaved":false,"officialCommentsCount":1
 "isGatheringSupport":true,"isSaved":false,"officialCommentsCount":1,"publishedAt":"2026-10-26T11:27:05.445219Z","shareUr
-"supportCount":202,"supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Gold
+"supportCount":204,"supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Gold
 "supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Golden Gate Bridge! Be 
 "supporterMessage":"Thank you for supporting the Golden Gate Bridge! Be sure to tell your friends to support too.","tags
 
@@ -78,8 +78,8 @@ Thank you for supporting
 2
 0
 0
-2
-2
+4
+4
 supporters
 See timeline
 417
@@ -104,8 +104,8 @@ Thank you for supporting
 2
 0
 0
-2
-2
+4
+4
 supporters
 See timeline
 417
@@ -163,15 +163,15 @@ Dark Lord of Bricks
 Lego Prague Through the Seasons
 836
 32
-357 days
+356 days
 Microcity_Builder
 Calgary Skyline
 218
 28
 379 days
-GeneralPankek240
-Lego 'Galata Tower '
-235
-36
-347 days
+WrapFull7888
+The Big Manor
+325
+33
+315 days
 Notifications
