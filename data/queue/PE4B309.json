@@ -1,0 +1,34 @@
+{
+  "id": "PE4B309",
+  "item_id": "1-the-golden-gate-bridge",
+  "channel": "bluesky",
+  "kind": "milestone",
+  "style": null,
+  "text": "We just hit 250 supporters on my first LEGO Ideas project! Thank you so much to everyone who voted so far. Next goal is 500 on our journey to 10k! If you love the Golden Gate Bridge, please support for free: https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5 #LEGO #AFOL",
+  "title": "250 Supporters Reached!",
+  "alt_text": "A massive, detailed LEGO fan build of the Golden Gate Bridge featuring microscale cars on the roadway.",
+  "link": "https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5",
+  "image_headline": "Bring The Golden Gate Bridge To Life",
+  "milestone_label": "250 supporters!",
+  "milestone": {
+    "watcher_id": "w1",
+    "trigger_id": "t2",
+    "metric": "supporters",
+    "value": 250.0,
+    "threshold": 250.0,
+    "label": "250 supporters!",
+    "message": "milestone",
+    "item_id": "1-the-golden-gate-bridge"
+  },
+  "image": "media/PE4B309.jpg",
+  "extra_images": [
+    "media/PE4B309-1.jpg",
+    "media/PE4B309-2.jpg",
+    "media/PE4B309-3.jpg"
+  ],
+  "status": "ready",
+  "created_at": "2026-11-08T15:25:54+00:00",
+  "attempts": 0,
+  "written_by": "ai",
+  "template": "milestone"
+}
