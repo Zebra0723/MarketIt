@@ -26,9 +26,12 @@
     "media/PE4B309-2.jpg",
     "media/PE4B309-3.jpg"
   ],
-  "status": "ready",
+  "status": "published",
   "created_at": "2026-11-08T15:25:54+00:00",
   "attempts": 0,
   "written_by": "ai",
-  "template": "milestone"
+  "template": "milestone",
+  "published_at": "2026-11-08T15:26:02+00:00",
+  "platform_id": "at://did:plc:4bdfthcsz3oxjtssft7sfelz/app.bsky.feed.post/3mzspvc7rml2c",
+  "url": "https://bsky.app/profile/legoideas.bsky.social/post/3mzspvc7rml2c"
 }
