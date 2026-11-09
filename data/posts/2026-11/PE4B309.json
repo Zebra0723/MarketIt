@@ -33,5 +33,12 @@
   "template": "milestone",
   "published_at": "2026-11-08T15:26:02+00:00",
   "platform_id": "at://did:plc:4bdfthcsz3oxjtssft7sfelz/app.bsky.feed.post/3mzspvc7rml2c",
-  "url": "https://bsky.app/profile/legoideas.bsky.social/post/3mzspvc7rml2c"
+  "url": "https://bsky.app/profile/legoideas.bsky.social/post/3mzspvc7rml2c",
+  "metrics": {
+    "likes": 0,
+    "reposts": 0,
+    "replies": 0
+  },
+  "engagement": 0,
+  "metrics_at": "2026-11-09T08:04:50+00:00"
 }
