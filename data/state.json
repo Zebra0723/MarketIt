@@ -20,7 +20,7 @@
   },
   "last_stats_at": "2026-11-12T03:52:10+00:00",
   "approvals_issue": null,
-  "issues_synced_at": "2026-11-12T12:50:30+00:00",
+  "issues_synced_at": "2026-11-12T20:52:51+00:00",
   "processed_comments": [
     6526999883,
     6527084996,
@@ -37,7 +37,7 @@
     6710337642,
     6723330847
   ],
-  "comments_synced_at": "2026-11-12T12:50:30+00:00",
+  "comments_synced_at": "2026-11-12T20:52:51+00:00",
   "failed_issues": {},
   "ai_error_warned": {
     "1": "7060e14d9b21d215"
