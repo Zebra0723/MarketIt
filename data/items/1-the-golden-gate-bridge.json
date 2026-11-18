@@ -57,12 +57,12 @@
     ]
   },
   "project": {
-    "supporters": 296,
+    "supporters": 297,
     "days_left": 402,
     "creator": "ZEBRASARECOOL",
-    "source": "AI",
+    "source": "page data",
     "next_goal": 500,
-    "updated_at": "2026-11-18T04:31:47+00:00"
+    "updated_at": "2026-11-18T14:11:33+00:00"
   },
   "strategy": {
     "channels": [
@@ -372,6 +372,10 @@
         {
           "t": "2026-11-18T04:31:47+00:00",
           "v": 296.0
+        },
+        {
+          "t": "2026-11-18T14:11:33+00:00",
+          "v": 297.0
         }
       ],
       "fired": [
@@ -388,7 +392,7 @@
           "silent": false
         }
       ],
-      "last_checked": "2026-11-18T04:29:42+00:00",
+      "last_checked": "2026-11-18T14:08:27+00:00",
       "last_error": null
     },
     {
@@ -624,13 +628,17 @@
         {
           "t": "2026-11-18T04:31:47+00:00",
           "v": 402.0
+        },
+        {
+          "t": "2026-11-18T14:11:33+00:00",
+          "v": 402.0
         }
       ],
       "fired": [],
-      "last_checked": "2026-11-18T04:31:47+00:00",
+      "last_checked": "2026-11-18T14:11:33+00:00",
       "last_error": null
     }
   ],
   "unsupported": [],
-  "updated_at": "2026-11-18T04:31:47+00:00"
+  "updated_at": "2026-11-18T14:11:33+00:00"
 }
