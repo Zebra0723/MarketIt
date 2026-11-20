@@ -1,10 +1,10 @@
 # Snapshot of https://ideas.lego.com/product-ideas/6726571d-0a01-411f-b5ac-425634ecf4e5
-read at 2026-11-20T13:02:46+00:00
+read at 2026-11-20T21:18:00+00:00
 
 title: The Golden Gate Bridge | LEGO® Ideas
 description: This is the Golden Gate Bridge - an iconic landmark in the sunny state of California. This model, almost 4000 pieces, is my LEGO representation of such an amazi…
 
-stats used: {'supporters': 305, 'days_left': 400, 'creator': 'ZEBRASARECOOL', 'source': 'AI', 'next_goal': 500, 'updated_at': '2026-11-19T22:14:12+00:00'}
+stats used: {'supporters': 307, 'days_left': 400, 'creator': 'ZEBRASARECOOL', 'source': 'AI', 'next_goal': 500, 'updated_at': '2026-11-20T13:02:46+00:00'}
 
 ## images
 https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e99583/original:0:0/webp
@@ -48,7 +48,7 @@ https://ideas.lego.com/build/images/blank-aev7vQVR.png
 "hasSupported":false,"images":[{"url":"https://ideascdn.lego.com/media/generate/lego_ci/2c024d6c-0327-446e-a47d-b02066e9
 "isCreator":false,"isDraft":false,"isFeatured":false,"isGatheringSupport":true,"isSaved":false,"officialCommentsCount":1
 "isGatheringSupport":true,"isSaved":false,"officialCommentsCount":1,"publishedAt":"2026-10-26T11:27:05.445219Z","shareUr
-"supportCount":305,"supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Gold
+"supportCount":307,"supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Gold
 "supportEndingAt":"2027-12-25T11:27:05.445219Z","supporterMessage":"Thank you for supporting the Golden Gate Bridge! Be 
 "supporterMessage":"Thank you for supporting the Golden Gate Bridge! Be sure to tell your friends to support too.","tags
 
@@ -78,8 +78,8 @@ Thank you for supporting
 3
 0
 0
-5
-5
+7
+7
 supporters
 See timeline
 400
@@ -104,8 +104,8 @@ Thank you for supporting
 3
 0
 0
-5
-5
+7
+7
 supporters
 See timeline
 400
@@ -156,7 +156,7 @@ Sign in
 Related product ideas
 WizardHonorableNoodle240
 Golden Gate Bridge (San Francisco)
-274
+275
 32
 333 days
 Dark Lord of Bricks
@@ -166,12 +166,12 @@ Lego Prague Through the Seasons
 339 days
 Microcity_Builder
 Calgary Skyline
-231
-29
+233
+30
 362 days
-WrapFull7888
-The Big Manor
-330
-34
-298 days
+brickclub
+Sydney Harbour Bridge
+185
+24
+397 days
 Notifications
